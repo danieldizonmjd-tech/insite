@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+
+  <!-- Mobile Optimization -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0c1017">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com/firebasejs/ https://apis.google.com https://kit.fontawesome.com https://ka-f.fontawesome.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com;
+    img-src 'self' data: https:;
+    font-src 'self' https://fonts.gstatic.com https://kit.fontawesome.com https://ka-f.fontawesome.com https://cdnjs.cloudflare.com;
+    connect-src 'self' https://ka-f.fontawesome.com https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com;
+    frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://appleid.apple.com;
+  ">
+
+  <title>InSite - Sign In</title>
+
+  <!-- Theme Controller (load before CSS to prevent flash) -->
+  <script src="theme-controller.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="Stylesheet/landing-styles-fresh.css">
+  <link rel="stylesheet" href="Stylesheet/auth-styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="Img/insite_new_logo_transparent.png">
+</head>
+<body class="auth-page">
+
+  <!-- Navigation -->
+  <nav class="auth-nav">
+    <a href="App/insite_main.html" class="nav__logo">
+      <img src="Img/insite_new_logo_transparent.png" alt="InSite" class="nav__logo-img">
+      <span class="nav__logo-text">InSite</span>
+    </a>
+    <div class="auth-nav__actions">
+      <button class="btn--icon" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle light/dark mode">
+        <i id="themeIcon" class="fa-solid fa-moon"></i>
+      </button>
+      <a href="App/insite_main.html" class="btn btn--ghost btn--sm">Back to Home</a>
+    </div>
+  </nav>
+
+  <!-- Background Effects -->
+  <div class="auth-background">
+    <div class="hero__grid"></div>
+    <div class="hero__orb hero__orb--1"></div>
+    <div class="hero__orb hero__orb--2"></div>
+  </div>
+
+  <!-- Main Auth Container -->
+  <main class="auth-container">
+    <div class="auth-card">
+
+      <!-- Message Area (errors/success) -->
+      <div id="authMessage" class="auth-message" style="display: none;"></div>
+
+      <!-- Tab Switcher -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="loginTab" onclick="switchAuthTab('login')">Sign In</button>
+        <button class="auth-tab" id="signupTab" onclick="switchAuthTab('signup')">Create Account</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm" class="auth-form" onsubmit="handleEmailLogin(event)">
+        <div class="form-group">
+          <label for="loginEmail" class="form-label">Email</label>
+          <input type="email" id="loginEmail" class="form-input" placeholder="you@example.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label for="loginPassword" class="form-label">Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="loginPassword" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
+            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Show password">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-options">
+          <label class="checkbox">
+            <input type="checkbox" id="rememberMe">
+            <span>Remember me</span>
+          </label>
+          <a href="#" class="form-link" onclick="showForgotPassword(event)">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--full" id="loginSubmitBtn">
+          <span>Sign In</span>
+        </button>
+
+        <p class="auth-switch">
+          Don't have an account? <a href="#" onclick="switchAuthTab('signup'); return false;">Create one</a>
+        </p>
+      </form>
+
+      <!-- SIGNUP FORM -->
+      <form id="signupForm" class="auth-form" style="display: none;" onsubmit="handleEmailSignup(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="signupFirstName" class="form-label">First Name</label>
+            <input type="text" id="signupFirstName" class="form-input" placeholder="John" required autocomplete="given-name">
+          </div>
+          <div class="form-group">
+            <label for="signupLastName" class="form-label">Last Name</label>
+            <input type="text" id="signupLastName" class="form-input" placeholder="Doe" required autocomplete="family-name">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="signupEmail" class="form-label">Email</label>
+          <input type="email" id="signupEmail" class="form-input" placeholder="you@example.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label for="signupPassword" class="form-label">Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="signupPassword" class="form-input" placeholder="Min 8 characters" required minlength="8" autocomplete="new-password">
+            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('signupPassword', this)" aria-label="Show password">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-options">
+          <label class="checkbox">
+            <input type="checkbox" id="agreeTerms" required>
+            <span>I agree to the <a href="#" class="form-link">Terms</a> and <a href="#" class="form-link">Privacy Policy</a></span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--full" id="signupSubmitBtn">
+          <span>Create Account</span>
+        </button>
+
+        <p class="auth-switch">
+          Already have an account? <a href="#" onclick="switchAuthTab('login'); return false;">Sign in</a>
+        </p>
+      </form>
+
+      <!-- FORGOT PASSWORD FORM -->
+      <form id="forgotPasswordForm" class="auth-form" style="display: none;" onsubmit="handleForgotPassword(event)">
+        <h3 style="color: var(--text-primary); font-size: 1.1rem; margin-bottom: 0.5rem;">Reset Password</h3>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.25rem;">Enter your email and we'll send you a reset link.</p>
+
+        <div class="form-group">
+          <label for="resetEmail" class="form-label">Email</label>
+          <input type="email" id="resetEmail" class="form-input" placeholder="you@example.com" required autocomplete="email">
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--full" id="resetSubmitBtn">
+          <span>Send Reset Link</span>
+        </button>
+
+        <p class="auth-switch">
+          <a href="#" onclick="switchAuthTab('login'); return false;">Back to Sign In</a>
+        </p>
+      </form>
+
+      <!-- Divider -->
+      <div class="divider" id="oauthDivider">
+        <span>or continue with</span>
+      </div>
+
+      <!-- OAuth Buttons (4 providers) -->
+      <div class="social-auth social-auth--4col" id="oauthButtons">
+        <button type="button" class="social-btn" onclick="handleOAuthSignIn('google')" title="Sign in with Google">
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          <span>Google</span>
+        </button>
+
+        <button type="button" class="social-btn" onclick="handleOAuthSignIn('microsoft')" title="Sign in with Microsoft">
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
+            <rect x="13" y="1" width="10" height="10" fill="#7FBA00"/>
+            <rect x="1" y="13" width="10" height="10" fill="#00A4EF"/>
+            <rect x="13" y="13" width="10" height="10" fill="#FFB900"/>
+          </svg>
+          <span>Microsoft</span>
+        </button>
+
+        <button type="button" class="social-btn" onclick="handleOAuthSignIn('github')" title="Sign in with GitHub">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+          </svg>
+          <span>GitHub</span>
+        </button>
+
+        <button type="button" class="social-btn" onclick="handleOAuthSignIn('apple')" title="Sign in with Apple">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+          </svg>
+          <span>Apple</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Guest Mode -->
+    <div class="guest-option">
+      <a href="#" onclick="continueAsGuest(event)" class="guest-link">
+        Continue as Guest
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+  </main>
+
+  <!-- Input Sanitization -->
+  <script src="input-sanitizer.js"></script>
+
+  <!-- Firebase SDK (compat mode for vanilla JS) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="auth.js"></script>
+  <script src="user-data.js"></script>
+
+  <script>
+    // ========================================================================
+    // Page Configuration
+    // ========================================================================
+    const params = new URLSearchParams(window.location.search);
+    const redirectUrl = params.get('redirect') || 'Map/insite_main.html';
+    const initialMode = params.get('mode') || 'login';
+    const requestedPlan = params.get('plan');
+    const autoProvider = params.get('provider');
+
+    // ========================================================================
+    // Auto-redirect if already logged in
+    // ========================================================================
+    onAuthReady((user) => {
+      if (user) {
+        // Clear metro selection to force user to see metro selection screen
+        localStorage.removeItem('selectedMetroRegion');
+        window.location.href = redirectUrl;
+      }
+    });
+
+    // ========================================================================
+    // Set initial tab from URL params
+    // ========================================================================
+    if (initialMode === 'signup') {
+      switchAuthTab('signup');
+    }
+
+    // If a provider was specified in URL, auto-trigger OAuth
+    if (autoProvider) {
+      handleOAuthSignIn(autoProvider);
+    }
+
+    // ========================================================================
+    // Tab Switching
+    // ========================================================================
+    function switchAuthTab(tab) {
+      const loginTab = document.getElementById('loginTab');
+      const signupTab = document.getElementById('signupTab');
+      const loginForm = document.getElementById('loginForm');
+      const signupForm = document.getElementById('signupForm');
+      const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+      const oauthDivider = document.getElementById('oauthDivider');
+      const oauthButtons = document.getElementById('oauthButtons');
+
+      // Hide all forms
+      loginForm.style.display = 'none';
+      signupForm.style.display = 'none';
+      forgotPasswordForm.style.display = 'none';
+
+      // Show OAuth section
+      oauthDivider.style.display = '';
+      oauthButtons.style.display = '';
+
+      // Reset tabs
+      loginTab.classList.remove('active');
+      signupTab.classList.remove('active');
+
+      // Clear messages
+      hideMessage();
+
+      if (tab === 'login') {
+        loginTab.classList.add('active');
+        loginForm.style.display = '';
+      } else if (tab === 'signup') {
+        signupTab.classList.add('active');
+        signupForm.style.display = '';
+      }
+    }
+
+    // ========================================================================
+    // Forgot Password
+    // ========================================================================
+    function showForgotPassword(e) {
+      if (e) e.preventDefault();
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('signupForm').style.display = 'none';
+      document.getElementById('forgotPasswordForm').style.display = '';
+      document.getElementById('oauthDivider').style.display = 'none';
+      document.getElementById('oauthButtons').style.display = 'none';
+      document.getElementById('loginTab').classList.remove('active');
+      document.getElementById('signupTab').classList.remove('active');
+      hideMessage();
+    }
+
+    // ========================================================================
+    // Email Login
+    // ========================================================================
+    async function handleEmailLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('loginSubmitBtn');
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      // Validate
+      if (typeof InputSanitizer !== 'undefined') {
+        const sanitizedEmail = InputSanitizer.sanitizeEmail(email);
+        if (!sanitizedEmail) {
+          showMessage('Please enter a valid email address.', 'error');
+          return;
+        }
+      }
+
+      setLoading(btn, true);
+      hideMessage();
+
+      const result = await InsiteAuth.signInWithEmail(email, password);
+
+      if (result.success) {
+        showMessage('Signed in successfully! Redirecting...', 'success');
+        // Clear metro selection to force user to see metro selection screen
+        localStorage.removeItem('selectedMetroRegion');
+        setTimeout(() => { window.location.href = redirectUrl; }, 500);
+      } else {
+        showMessage(result.error, 'error');
+        setLoading(btn, false);
+      }
+    }
+
+    // ========================================================================
+    // Email Signup
+    // ========================================================================
+    async function handleEmailSignup(e) {
+      e.preventDefault();
+      const btn = document.getElementById('signupSubmitBtn');
+      const firstName = document.getElementById('signupFirstName').value.trim();
+      const lastName = document.getElementById('signupLastName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      const password = document.getElementById('signupPassword').value;
+
+      // Validate
+      if (firstName.length < 2) {
+        showMessage('First name must be at least 2 characters.', 'error');
+        return;
+      }
+      if (lastName.length < 2) {
+        showMessage('Last name must be at least 2 characters.', 'error');
+        return;
+      }
+      if (typeof InputSanitizer !== 'undefined') {
+        const sanitizedEmail = InputSanitizer.sanitizeEmail(email);
+        if (!sanitizedEmail) {
+          showMessage('Please enter a valid email address.', 'error');
+          return;
+        }
+        const passwordValidation = InputSanitizer.validatePassword(password);
+        if (!passwordValidation.valid) {
+          showMessage(passwordValidation.message, 'error');
+          return;
+        }
+      }
+
+      setLoading(btn, true);
+      hideMessage();
+
+      const result = await InsiteAuth.signUpWithEmail(email, password, firstName, lastName);
+
+      if (result.success) {
+        showMessage('Account created! Redirecting...', 'success');
+        // Clear metro selection to force user to see metro selection screen
+        localStorage.removeItem('selectedMetroRegion');
+        // If a plan was requested, store it for later
+        if (requestedPlan) {
+          sessionStorage.setItem('insiteRequestedPlan', requestedPlan);
+        }
+        setTimeout(() => { window.location.href = redirectUrl; }, 500);
+      } else {
+        showMessage(result.error, 'error');
+        setLoading(btn, false);
+      }
+    }
+
+    // ========================================================================
+    // OAuth Sign In
+    // ========================================================================
+    async function handleOAuthSignIn(providerName) {
+      hideMessage();
+      showMessage('Connecting to ' + providerName + '...', 'info');
+
+      const result = await InsiteAuth.signInWithProvider(providerName);
+
+      if (result.success) {
+        showMessage('Signed in successfully! Redirecting...', 'success');
+        // Clear metro selection to force user to see metro selection screen
+        localStorage.removeItem('selectedMetroRegion');
+        if (requestedPlan) {
+          sessionStorage.setItem('insiteRequestedPlan', requestedPlan);
+        }
+        setTimeout(() => { window.location.href = redirectUrl; }, 500);
+      } else {
+        showMessage(result.error, 'error');
+      }
+    }
+
+    // ========================================================================
+    // Forgot Password
+    // ========================================================================
+    async function handleForgotPassword(e) {
+      e.preventDefault();
+      const btn = document.getElementById('resetSubmitBtn');
+      const email = document.getElementById('resetEmail').value.trim();
+
+      setLoading(btn, true);
+      hideMessage();
+
+      const result = await InsiteAuth.sendPasswordReset(email);
+
+      setLoading(btn, false);
+
+      if (result.success) {
+        showMessage('Password reset email sent! Check your inbox.', 'success');
+      } else {
+        showMessage(result.error, 'error');
+      }
+    }
+
+    // ========================================================================
+    // Guest Mode
+    // ========================================================================
+    function continueAsGuest(e) {
+      if (e) e.preventDefault();
+      sessionStorage.setItem('insiteGuestMode', 'true');
+      window.location.href = redirectUrl;
+    }
+
+    // ========================================================================
+    // UI Helpers
+    // ========================================================================
+    function showMessage(text, type) {
+      const el = document.getElementById('authMessage');
+      el.textContent = text;
+      el.className = 'auth-message auth-message--' + type;
+      el.style.display = 'flex';
+    }
+
+    function hideMessage() {
+      const el = document.getElementById('authMessage');
+      el.style.display = 'none';
+    }
+
+    function setLoading(btn, loading) {
+      if (loading) {
+        btn.classList.add('btn--loading');
+        btn.disabled = true;
+      } else {
+        btn.classList.remove('btn--loading');
+        btn.disabled = false;
+      }
+    }
+
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const icon = btn.querySelector('i');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-solid fa-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'fa-solid fa-eye';
+      }
+    }
+  </script>
+
+  <!-- Font Awesome -->
+  <script src="https://kit.fontawesome.com/cb743f63e5.js" crossorigin="anonymous"></script>
+</body>
+</html>

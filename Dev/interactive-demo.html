@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Features Demo - INSITE Atlanta</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #f1f5f9;
+      padding: 40px 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+
+    .subtitle {
+      font-size: 1.25rem;
+      color: #94a3b8;
+      margin-bottom: 3rem;
+    }
+
+    .demo-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      transition: all 0.3s ease;
+    }
+
+    .demo-card:hover {
+      transform: translateY(-4px);
+      border-color: #8b5cf6;
+      box-shadow: 0 12px 48px rgba(139, 92, 246, 0.2);
+    }
+
+    h2 {
+      font-size: 1.75rem;
+      color: #8b5cf6;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .feature-badge {
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .demo-steps {
+      list-style: none;
+      counter-reset: step-counter;
+    }
+
+    .demo-steps li {
+      counter-increment: step-counter;
+      margin-bottom: 1.5rem;
+      padding-left: 3rem;
+      position: relative;
+    }
+
+    .demo-steps li::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 2rem;
+      height: 2rem;
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.875rem;
+    }
+
+    .code-block {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.875rem;
+      overflow-x: auto;
+    }
+
+    .highlight {
+      color: #10b981;
+      font-weight: 600;
+    }
+
+    .warning {
+      color: #f59e0b;
+      font-weight: 600;
+    }
+
+    .key-combo {
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-family: 'Monaco', monospace;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #8b5cf6;
+    }
+
+    .action-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      margin-top: 1rem;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .metric-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .metric-label {
+      color: #94a3b8;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 0.5rem;
+    }
+
+    .visual-demo {
+      background: rgba(15, 23, 42, 0.9);
+      border: 2px solid #8b5cf6;
+      border-radius: 16px;
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .score-ring-demo {
+      display: inline-block;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.95);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      margin: 1rem;
+    }
+
+    .score-ring-demo::before {
+      content: '82';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2rem;
+      font-weight: 800;
+      color: #10b981;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .demo-card {
+        padding: 1.5rem;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 Interactive Map Features Demo</h1>
+    <p class="subtitle">Complete guide to all new features in INSITE Atlanta Property Intelligence</p>
+
+    <!-- Feature 1: Search Bar -->
+    <div class="demo-card">
+      <h2>🔍 Enhanced Search Bar <span class="feature-badge">NEW</span></h2>
+      <p>Smart autocomplete search for ZIP codes, cities, and neighborhoods.</p>
+      
+      <ul class="demo-steps">
+        <li>
+          <strong>Open the map</strong> - Navigate to <code>index.html</code>
+        </li>
+        <li>
+          <strong>Type in search bar</strong> - Enter "30303", "Atlanta", or "Buckhead"
+        </li>
+        <li>
+          <strong>View suggestions</strong> - Autocomplete dropdown appears instantly
+        </li>
+        <li>
+          <strong>Select result</strong> - Click or press <span class="key-combo">Enter</span>
+        </li>
+      </ul>
+
+      <div class="code-block">
+<span class="highlight">Try these searches:</span>
+• "30305" → Buckhead neighborhood
+• "Midtown" → Multiple ZIP results
+• "Atlanta" → All Atlanta ZIPs
+      </div>
+    </div>
+
+    <!-- Feature 2: Hover Score Ring -->
+    <div class="demo-card">
+      <h2>🎯 Animated Score Ring <span class="feature-badge">ENHANCED</span></h2>
+      <p>Circular progress ring with smooth animation and color-coded scoring.</p>
+      
+      <div class="visual-demo">
+        <div class="score-ring-demo"></div>
+        <div class="score-ring-demo" style="border-color: #f59e0b;"></div>
+        <div class="score-ring-demo" style="border-color: #ef4444;"></div>
+        <p style="margin-top: 1rem; color: #94a3b8;">
+          <span class="highlight">Green (80-100)</span> • 
+          <span class="warning">Yellow (50-79)</span> • 
+          <span style="color: #ef4444;">Red (0-49)</span>
+        </p>
+      </div>
+
+      <ul class="demo-steps">
+        <li>
+          <strong>Hover over ZIP code</strong> - Move mouse over any colored area
+        </li>
+        <li>
+          <strong>Watch animation</strong> - Ring draws smoothly from 0 to score
+        </li>
+        <li>
+          <strong>Note the color</strong> - Indicates overall area quality
+        </li>
+        <li>
+          <strong>Move mouse away</strong> - Ring fades out automatically
+        </li>
+      </ul>
+    </div>
+
+    <!-- Feature 3: Count-Up Animation -->
+    <div class="demo-card">
+      <h2>📊 Count-Up Animations <span class="feature-badge">NEW</span></h2>
+      <p>Engaging number animations that count from zero to actual values.</p>
+
+      <div class="grid">
+        <div class="metric-card">
+          <div class="metric-value">$450,000</div>
+          <div class="metric-label">Property Value</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">35,000</div>
+          <div class="metric-label">Population</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">82/100</div>
+          <div class="metric-label">Overall Score</div>
+        </div>
+      </div>
+
+      <ul class="demo-steps">
+        <li>
+          <strong>Click any ZIP code</strong> - HUD card appears
+        </li>
+        <li>
+          <strong>Watch numbers animate</strong> - Count up from 0 in 800ms
+        </li>
+        <li>
+          <strong>See staggered timing</strong> - Each card animates slightly after the previous
+        </li>
+      </ul>
+    </div>
+
+    <!-- Feature 4: Comparison Mode -->
+    <div class="demo-card">
+      <h2>⚖️ Multi-ZIP Comparison <span class="feature-badge">NEW</span></h2>
+      <p>Compare up to 4 ZIP codes side-by-side with one-click export.</p>
+
+      <ul class="demo-steps">
+        <li>
+          <strong>Hold <span class="key-combo">Ctrl</span></strong> (or <span class="key-combo">Cmd</span> on Mac)
+        </li>
+        <li>
+          <strong>Click first ZIP</strong> - Purple border appears (selection confirmed)
+        </li>
+        <li>
+          <strong>Keep holding, click more ZIPs</strong> - Add up to 4 total
+        </li>
+        <li>
+          <strong>View comparison panel</strong> - Slides in from right side
+        </li>
+        <li>
+          <strong>Export data</strong> - Click <span class="highlight">📊 Export CSV</span> button
+        </li>
+      </ul>
+
+      <div class="code-block">
+<span class="highlight">Example Comparison:</span>
+30305 (Buckhead) vs 30309 (Midtown) vs 30312 (Downtown)
+
+<span class="warning">Pro Tip:</span> Click the X on individual cards to remove from comparison
+      </div>
+    </div>
+
+    <!-- Feature 5: Toast Notifications -->
+    <div class="demo-card">
+      <h2>📢 Toast Notifications <span class="feature-badge">NEW</span></h2>
+      <p>Elegant feedback messages for user actions.</p>
+
+      <ul class="demo-steps">
+        <li>
+          <strong>Perform any action</strong> - Search, select, export, etc.
+        </li>
+        <li>
+          <strong>See toast appear</strong> - Bottom center, slides up smoothly
+        </li>
+        <li>
+          <strong>Auto-dismiss</strong> - Disappears after 3 seconds
+        </li>
+      </ul>
+
+      <div class="code-block">
+<span class="highlight">✓ Success:</span> "Loaded data for 30305 - Buckhead"
+<span class="warning">⚠ Warning:</span> "Maximum 4 ZIPs can be compared at once"
+<span style="color: #ef4444;">✕ Error:</span> "Location not found"
+<span style="color: #06b6d4;">ℹ Info:</span> "ZIP already added to comparison"
+      </div>
+    </div>
+
+    <!-- Feature 6: Mobile Responsive -->
+    <div class="demo-card">
+      <h2>📱 Mobile Optimized <span class="feature-badge">RESPONSIVE</span></h2>
+      <p>Fully responsive design that works flawlessly on all devices.</p>
+
+      <ul class="demo-steps">
+        <li>
+          <strong>Test on mobile</strong> - Open in Safari/Chrome on phone
+        </li>
+        <li>
+          <strong>Tap to select</strong> - Works like desktop click
+        </li>
+        <li>
+          <strong>HUD at bottom</strong> - Repositioned for thumb reach
+        </li>
+        <li>
+          <strong>Swipe to scroll</strong> - Smooth panel scrolling
+        </li>
+      </ul>
+
+      <div class="grid">
+        <div class="metric-card">
+          <div class="metric-value">768px</div>
+          <div class="metric-label">Tablet Breakpoint</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">480px</div>
+          <div class="metric-label">Mobile Breakpoint</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature 7: Keyboard Shortcuts -->
+    <div class="demo-card">
+      <h2>⌨️ Keyboard Navigation <span class="feature-badge">ACCESSIBLE</span></h2>
+      <p>Power user shortcuts for efficient navigation.</p>
+
+      <div class="code-block">
+<span class="highlight">Search:</span>
+• <span class="key-combo">Enter</span> - Execute search
+• <span class="key-combo">Esc</span> - Clear search field
+• <span class="key-combo">Tab</span> - Navigate suggestions
+
+<span class="highlight">HUD Card:</span>
+• <span class="key-combo">Tab</span> - Navigate between buttons
+• <span class="key-combo">Enter</span> - Activate button
+• <span class="key-combo">Esc</span> - Close HUD
+
+<span class="highlight">Comparison:</span>
+• <span class="key-combo">Ctrl + Click</span> - Add to comparison
+• <span class="key-combo">Delete</span> - Remove selected (future)
+      </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="demo-card">
+      <h2>⚡ Performance Metrics</h2>
+      
+      <div class="grid">
+        <div class="metric-card">
+          <div class="metric-value">60</div>
+          <div class="metric-label">FPS Target</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">< 200ms</div>
+          <div class="metric-label">HUD Load Time</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">27KB</div>
+          <div class="metric-label">Bundle Size</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">100%</div>
+          <div class="metric-label">Mobile Optimized</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Test Checklist -->
+    <div class="demo-card">
+      <h2>✅ Quick Test Checklist</h2>
+      
+      <div class="code-block">
+<span class="highlight">Desktop Tests (5 minutes):</span>
+□ Hover over 3 different ZIP codes
+□ Click on a ZIP to see HUD
+□ Search for "30305" and press Enter
+□ Ctrl+Click to select 3 ZIPs for comparison
+□ Export comparison to CSV
+□ Close HUD and zoom out
+
+<span class="highlight">Mobile Tests (3 minutes):</span>
+□ Tap on a ZIP code
+□ Use search bar with virtual keyboard
+□ Scroll comparison panel
+□ Verify all buttons are tap-friendly
+
+<span class="highlight">Accessibility Tests (2 minutes):</span>
+□ Tab through all interactive elements
+□ Verify focus indicators are visible
+□ Test with screen reader (optional)
+      </div>
+    </div>
+
+    <!-- Get Started -->
+    <div class="demo-card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%); border-color: #8b5cf6;">
+      <h2>🎉 Ready to Test?</h2>
+      <p style="font-size: 1.125rem; margin-bottom: 1rem;">
+        All features are live and ready to use. Open <code>index.html</code> to start exploring!
+      </p>
+      
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="index.html" class="action-btn">🗺️ Open Interactive Map</a>
+        <a href="ITERATION_2_COMPLETE.md" class="action-btn" style="background: rgba(6, 182, 212, 0.8);">📖 Full Documentation</a>
+      </div>
+
+      <div class="code-block" style="margin-top: 2rem;">
+<span class="highlight">💡 Pro Tips:</span>
+• Start with hover to see score rings
+• Try comparison mode with diverse neighborhoods
+• Test mobile view by resizing browser window
+• Check console for debug information
+• Share feedback for Iteration 3 features!
+      </div>
+    </div>
+  </div>
+</body>
+</html>

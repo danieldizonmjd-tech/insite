@@ -1,0 +1,244 @@
+/**
+ * Coming Soon Banner Styles
+ * Used to indicate features/sections that are not yet available
+ */
+
+/* Full page overlay banner */
+.coming-soon-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Section overlay banner (for pricing, etc.) */
+.coming-soon-section {
+  position: relative;
+  pointer-events: none;
+  user-select: none;
+}
+
+.coming-soon-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10;
+  border-radius: inherit;
+}
+
+.coming-soon-section::after {
+  content: 'COMING SOON';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 11;
+  font-size: clamp(24px, 5vw, 48px);
+  font-weight: 800;
+  letter-spacing: 4px;
+  background: linear-gradient(135deg, #ec4899 0%, #7c3aed 50%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+/* Banner content */
+.coming-soon-content {
+  text-align: center;
+  padding: 60px 30px;
+  max-width: 600px;
+  animation: slideUp 0.6s ease-out;
+}
+
+.coming-soon-icon {
+  font-size: 80px;
+  margin-bottom: 30px;
+  animation: float 3s ease-in-out infinite;
+}
+
+.coming-soon-title {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800;
+  margin-bottom: 20px;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #ec4899 0%, #7c3aed 50%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+.coming-soon-subtitle {
+  font-size: clamp(16px, 3vw, 20px);
+  color: #94a3b8;
+  margin-bottom: 40px;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.coming-soon-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 40px;
+  background: linear-gradient(135deg, #ec4899 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 30px rgba(124, 58, 237, 0.35);
+}
+
+.coming-soon-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(139, 92, 246, 0.6);
+  background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+}
+
+.coming-soon-button:active {
+  transform: translateY(0);
+}
+
+/* Feature list */
+.coming-soon-features {
+  display: grid;
+  gap: 16px;
+  text-align: left;
+  margin: 40px 0;
+  max-width: 400px;
+}
+
+.coming-soon-feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 12px;
+  color: #e2e8f0;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.coming-soon-feature:hover {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.1);
+  transform: translateX(4px);
+}
+
+.coming-soon-feature svg,
+.coming-soon-feature i {
+  color: #8b5cf6;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* Notify button */
+.notify-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 30px;
+  background: rgba(30, 41, 59, 0.8);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+}
+
+.notify-button:hover {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes glow {
+  from {
+    text-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+  }
+  to {
+    text-shadow: 0 0 40px rgba(139, 92, 246, 0.6),
+                 0 0 60px rgba(236, 72, 153, 0.4);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .coming-soon-content {
+    padding: 40px 20px;
+  }
+  
+  .coming-soon-icon {
+    font-size: 60px;
+  }
+  
+  .coming-soon-features {
+    margin: 30px auto;
+  }
+  
+  .coming-soon-section::after {
+    font-size: 20px;
+    letter-spacing: 2px;
+  }
+}
+
+/* Utility classes */
+.hidden {
+  display: none !important;
+}

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>InSite Data Handler Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #0a0a0a; color: #fff; }
+    .test-result { 
+      background: #1a1a1a; 
+      border-left: 4px solid #10b981; 
+      padding: 15px; 
+      margin: 10px 0; 
+      border-radius: 4px;
+    }
+    .test-result.fail { border-left-color: #ef4444; }
+    .test-result.warn { border-left-color: #f59e0b; }
+    h2 { color: #10b981; }
+    code { background: #2a2a2a; padding: 2px 6px; border-radius: 3px; }
+    .success { color: #10b981; }
+    .fail { color: #ef4444; }
+    .warn { color: #f59e0b; }
+  </style>
+</head>
+<body>
+  <h1>🔍 InSite Data Handler Test Suite</h1>
+  <p>Testing the fixes to ensure real data is being used instead of fake estimates.</p>
+  
+  <div id="testResults"></div>
+  
+  <script src="community-helper.js"></script>
+  <script>
+    const results = [];
+    
+    // Test 1: CommunityHelper availability
+    results.push({
+      name: 'CommunityHelper Loaded',
+      pass: typeof CommunityHelper !== 'undefined',
+      details: typeof CommunityHelper !== 'undefined' 
+        ? '✓ CommunityHelper class is available' 
+        : '✗ CommunityHelper not loaded'
+    });
+    
+    // Test 2: CommunityHelper methods
+    if (typeof CommunityHelper !== 'undefined') {
+      const testLat = 33.7490;
+      const testLng = -84.3880;
+      
+      try {
+        const schoolResult = CommunityHelper.calculateSchoolScore(testLat, testLng);
+        results.push({
+          name: 'School Data Calculation',
+          pass: schoolResult && typeof schoolResult.score === 'number',
+          details: `Score: ${schoolResult.score}, Schools found: ${schoolResult.schoolsNearby || 0}`
+        });
+      } catch (e) {
+        results.push({
+          name: 'School Data Calculation',
+          pass: false,
+          details: `Error: ${e.message}`
+        });
+      }
+      
+      try {
+        const libraryResult = CommunityHelper.calculateLibraryScore(testLat, testLng);
+        results.push({
+          name: 'Library Data Calculation',
+          pass: libraryResult && typeof libraryResult.score === 'number',
+          details: `Score: ${libraryResult.score}, Libraries found: ${libraryResult.librariesNearby || 0}`
+        });
+      } catch (e) {
+        results.push({
+          name: 'Library Data Calculation',
+          pass: false,
+          details: `Error: ${e.message}`
+        });
+      }
+      
+      try {
+        const bikeResult = CommunityHelper.calculateBikeScore(testLat, testLng);
+        results.push({
+          name: 'Bike Score Calculation',
+          pass: bikeResult && typeof bikeResult.score === 'number',
+          details: `Score: ${bikeResult.score}, Bikeways found: ${bikeResult.bikewaysNearby || 0}`
+        });
+      } catch (e) {
+        results.push({
+          name: 'Bike Score Calculation',
+          pass: false,
+          details: `Error: ${e.message}`
+        });
+      }
+      
+      try {
+        const ozResult = CommunityHelper.checkOpportunityZone(testLat, testLng);
+        results.push({
+          name: 'Opportunity Zone Check',
+          pass: ozResult && typeof ozResult.inOpportunityZone === 'boolean',
+          details: `In OZ: ${ozResult.inOpportunityZone ? 'Yes' : 'No'}, Nearest: ${ozResult.nearestZone?.name || 'N/A'}`
+        });
+      } catch (e) {
+        results.push({
+          name: 'Opportunity Zone Check',
+          pass: false,
+          details: `Error: ${e.message}`
+        });
+      }
+    }
+    
+    // Test 3: Check for hardcoded data
+    if (typeof CommunityHelper !== 'undefined') {
+      const ch = new CommunityHelper();
+      results.push({
+        name: 'Schools Database',
+        pass: ch.schools && ch.schools.length > 0,
+        details: `${ch.schools?.length || 0} schools in database`,
+        warn: ch.schools?.length < 30
+      });
+      
+      results.push({
+        name: 'Libraries Database',
+        pass: ch.libraries && ch.libraries.length > 0,
+        details: `${ch.libraries?.length || 0} libraries in database`,
+        warn: ch.libraries?.length < 20
+      });
+      
+      results.push({
+        name: 'Bikeways Database',
+        pass: ch.bikeways && ch.bikeways.length > 0,
+        details: `${ch.bikeways?.length || 0} bikeways in database`,
+        warn: ch.bikeways?.length < 10
+      });
+      
+      results.push({
+        name: 'Opportunity Zones Database',
+        pass: ch.opportunityZones && ch.opportunityZones.length > 0,
+        details: `${ch.opportunityZones?.length || 0} opportunity zones in database`,
+        warn: ch.opportunityZones?.length < 10
+      });
+    }
+    
+    // Render results
+    const container = document.getElementById('testResults');
+    let passCount = 0;
+    let warnCount = 0;
+    let failCount = 0;
+    
+    results.forEach(result => {
+      if (result.pass) {
+        if (result.warn) warnCount++;
+        else passCount++;
+      } else {
+        failCount++;
+      }
+      
+      const className = result.pass ? (result.warn ? 'warn' : 'success') : 'fail';
+      const classNameDiv = result.pass ? (result.warn ? 'warn' : '') : 'fail';
+      const icon = result.pass ? (result.warn ? '⚠️' : '✓') : '✗';
+      
+      container.innerHTML += `
+        <div class="test-result ${classNameDiv}">
+          <h3><span class="${className}">${icon}</span> ${result.name}</h3>
+          <p>${result.details}</p>
+        </div>
+      `;
+    });
+    
+    // Summary
+    container.innerHTML = `
+      <div style="background: #1a1a1a; border: 2px solid #10b981; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <h2>Test Summary</h2>
+        <p><span class="success">✓ Passed: ${passCount}</span></p>
+        <p><span class="warn">⚠️ Warnings: ${warnCount}</span></p>
+        <p><span class="fail">✗ Failed: ${failCount}</span></p>
+      </div>
+    ` + container.innerHTML;
+    
+    // Instructions
+    container.innerHTML += `
+      <div style="background: #1a1a2a; border-left: 4px solid #3b82f6; padding: 20px; margin-top: 20px; border-radius: 4px;">
+        <h2>Next Steps</h2>
+        <ol>
+          <li>Open <code>insite_main.html</code> in your browser</li>
+          <li>Open Developer Tools (F12) and go to Console tab</li>
+          <li>Search for a ZIP code (e.g., <code>30339</code>)</li>
+          <li>Look for console logs like: <code>[30339] Using coordinates: 33.8712, -84.4655</code></li>
+          <li>Verify scores show "✓ Real" or "⚠ N/A" badges (no fake estimates)</li>
+          <li>Check that different ZIP codes give DIFFERENT results (not random)</li>
+        </ol>
+        
+        <h3>Test ZIP Codes:</h3>
+        <ul>
+          <li><code>30339</code> - Vinings (should have schools, libraries)</li>
+          <li><code>30318</code> - West Midtown (urban, transit access)</li>
+          <li><code>30076</code> - Roswell (suburban, good schools)</li>
+          <li><code>30518</code> - Buford (rural, limited data)</li>
+        </ul>
+        
+        <h3>What to Verify:</h3>
+        <ul>
+          <li>✓ Coordinates are consistent (same ZIP = same coords every time)</li>
+          <li>✓ Scores are based on actual nearby amenities (schools, libraries, etc.)</li>
+          <li>✓ "No data" shows when helpers can't find nearby facilities</li>
+          <li>✓ No more random scores that change on each search</li>
+          <li>✓ Data quality indicator shows at top of results</li>
+        </ul>
+      </div>
+    `;
+  </script>
+</body>
+</html>

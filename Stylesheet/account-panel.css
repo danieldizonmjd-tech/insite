@@ -1,0 +1,173 @@
+/* ============================================================================
+   InSite Account Panel Styles
+   Used in the main app (Map/insite_main.html)
+   ============================================================================ */
+
+/* Account Info Section */
+.account-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg-darker, rgba(0,0,0,0.2));
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.account-avatar {
+  flex-shrink: 0;
+}
+
+.account-avatar__img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(13, 148, 136, 0.3);
+}
+
+.account-avatar__fallback {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.account-details {
+  min-width: 0;
+  flex: 1;
+}
+
+.account-name {
+  color: var(--text-primary, #e2e8f0);
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.account-email {
+  color: var(--text-muted, #64748b);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tier Badges */
+.account-tier-badge {
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.account-tier-badge--pro {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.2));
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.account-tier-badge--enterprise {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(79, 70, 229, 0.2));
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.account-tier-badge--free {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--text-muted, #64748b);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+/* Account Button Variants */
+.account-btn--highlight {
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.15), rgba(13, 148, 136, 0.08)) !important;
+  border: 1px solid rgba(13, 148, 136, 0.3) !important;
+}
+
+.account-btn--highlight:hover {
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.25), rgba(13, 148, 136, 0.15)) !important;
+}
+
+.account-btn--upgrade {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.08)) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  color: #fbbf24 !important;
+}
+
+.account-btn--upgrade:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(245, 158, 11, 0.15)) !important;
+}
+
+.account-btn--danger {
+  color: #f87171 !important;
+}
+
+.account-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.1) !important;
+}
+
+/* Guest Section */
+.account-guest {
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.account-guest__icon {
+  margin-bottom: 0.25rem;
+}
+
+/* Account Overlay (for modals within the app) */
+.account-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.account-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.account-overlay__panel {
+  position: relative;
+  width: 90%;
+  max-width: 400px;
+  background: var(--bg-card, #131b2b);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.account-overlay__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.account-overlay__body {
+  padding: 1.25rem;
+}

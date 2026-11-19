@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InSite v2 Integration Example</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent: #3b82f6;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      padding: 2rem;
+      line-height: 1.6;
+    }
+    
+    .container { max-width: 1200px; margin: 0 auto; }
+    
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, var(--accent), var(--success));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .subtitle { color: var(--text-secondary); margin-bottom: 2rem; }
+    
+    .card {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .card h2 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .card h2::before {
+      content: '';
+      width: 4px;
+      height: 1.25rem;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+    
+    .stat {
+      background: rgba(59, 130, 246, 0.1);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    
+    .stat-label { font-size: 0.875rem; color: var(--text-secondary); }
+    .stat-value { font-size: 1.5rem; font-weight: 600; }
+    
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin: 1rem 0;
+    }
+    
+    .score-excellent { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 3px solid var(--success); }
+    .score-good { background: rgba(59, 130, 246, 0.2); color: var(--accent); border: 3px solid var(--accent); }
+    .score-fair { background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 3px solid var(--warning); }
+    .score-poor { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 3px solid var(--danger); }
+    
+    .breakdown {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    
+    .breakdown-item {
+      text-align: center;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+    }
+    
+    .breakdown-item .label { font-size: 0.75rem; color: var(--text-secondary); }
+    .breakdown-item .value { font-size: 1.25rem; font-weight: 600; }
+    
+    .trend-up { color: var(--success); }
+    .trend-down { color: var(--danger); }
+    .trend-stable { color: var(--text-secondary); }
+    
+    .insight {
+      padding: 0.75rem 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      border-left: 3px solid var(--accent);
+    }
+    
+    .insight.opportunity { border-left-color: var(--success); }
+    .insight.risk { border-left-color: var(--danger); }
+    .insight.strength { border-left-color: var(--accent); }
+    
+    .insight-type {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+    
+    .mock-badge {
+      display: inline-block;
+      font-size: 0.625rem;
+      padding: 0.125rem 0.5rem;
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--warning);
+      border-radius: 4px;
+      margin-left: 0.5rem;
+    }
+    
+    input, select {
+      background: var(--bg-primary);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: var(--text-primary);
+      font-size: 1rem;
+      width: 100%;
+    }
+    
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    
+    button:hover { opacity: 0.9; }
+    
+    .controls { display: flex; gap: 1rem; margin-bottom: 1rem; }
+    .controls input { flex: 1; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>InSite Urban Intelligence v2.0</h1>
+    <p class="subtitle">Modular Integration Example</p>
+
+    <!-- Controls -->
+    <div class="card">
+      <h2>Search Neighborhood</h2>
+      <div class="controls">
+        <input type="text" id="zipInput" placeholder="Enter ZIP code (e.g., 30309)" value="30309">
+        <button onclick="loadNeighborhood()">Analyze</button>
+      </div>
+    </div>
+
+    <!-- Neighborhood Profile -->
+    <div class="card" id="profileCard" style="display: none;">
+      <h2>
+        <span id="neighborhoodName">-</span>
+        <span class="mock-badge" id="mockBadge" style="display: none;">Simulated Data</span>
+      </h2>
+      
+      <div style="display: flex; align-items: center; gap: 2rem;">
+        <div style="text-align: center;">
+          <div class="score-badge" id="overallScore">-</div>
+          <div style="font-size: 0.875rem; color: var(--text-secondary);">Overall Score</div>
+        </div>
+        
+        <div class="grid" style="flex: 1;">
+          <div class="stat">
+            <div class="stat-label">Median Home Value</div>
+            <div class="stat-value" id="homeValue">-</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Median Income</div>
+            <div class="stat-value" id="income">-</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Population</div>
+            <div class="stat-value" id="population">-</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="breakdown" id="scoreBreakdown"></div>
+    </div>
+
+    <!-- Trend Analysis -->
+    <div class="card" id="trendCard" style="display: none;">
+      <h2>Price Trend Analysis</h2>
+      <div class="grid">
+        <div class="stat">
+          <div class="stat-label">Trend Direction</div>
+          <div class="stat-value" id="trendDirection">-</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">5-Year Change</div>
+          <div class="stat-value" id="trendChange">-</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">12-Month Forecast</div>
+          <div class="stat-value" id="forecast">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Insights -->
+    <div class="card" id="insightsCard" style="display: none;">
+      <h2>AI Insights</h2>
+      <div id="insightsList"></div>
+    </div>
+
+    <!-- Similar Neighborhoods -->
+    <div class="card" id="similarCard" style="display: none;">
+      <h2>Similar Neighborhoods</h2>
+      <div id="similarList" class="grid"></div>
+    </div>
+  </div>
+
+  <!-- Load InSite Bridge -->
+  <script src="src/insite-bridge.js"></script>
+  
+  <script>
+    // Initialize services
+    const mockProvider = InSite.mockDataProvider;
+    const trendAnalyzer = InSite.trendAnalyzer;
+    let scoringEngine = null;
+
+    // Load sample neighborhoods for scoring context
+    const sampleZips = ['30305', '30306', '30307', '30308', '30309', '30310', '30312', '30313', '30315', '30318'];
+    const neighborhoods = sampleZips.map(zip => mockProvider.getNeighborhood(zip));
+    scoringEngine = InSite.createScoringEngine(neighborhoods);
+
+    function loadNeighborhood() {
+      const zip = document.getElementById('zipInput').value.trim();
+      if (!zip) return;
+
+      // Get neighborhood data
+      const neighborhood = mockProvider.getNeighborhood(zip);
+      const scores = scoringEngine.calculateScores(neighborhood);
+
+      // Show cards
+      document.getElementById('profileCard').style.display = 'block';
+      document.getElementById('trendCard').style.display = 'block';
+      document.getElementById('insightsCard').style.display = 'block';
+      document.getElementById('similarCard').style.display = 'block';
+
+      // Update profile
+      document.getElementById('neighborhoodName').textContent = neighborhood.name;
+      document.getElementById('mockBadge').style.display = neighborhood.isMockData ? 'inline' : 'none';
+
+      // Update overall score
+      const scoreEl = document.getElementById('overallScore');
+      scoreEl.textContent = scores.overall || '-';
+      scoreEl.className = 'score-badge ' + InSite.ScoringEngine.getScoreClass(scores.overall);
+
+      // Update stats
+      document.getElementById('homeValue').textContent = InSite.Formatters.currency(neighborhood.metrics.avg_value);
+      document.getElementById('income').textContent = InSite.Formatters.currency(neighborhood.metrics.median_income);
+      document.getElementById('population').textContent = InSite.Formatters.compact(neighborhood.metrics.population);
+
+      // Update score breakdown
+      const breakdownEl = document.getElementById('scoreBreakdown');
+      breakdownEl.innerHTML = '';
+      const categories = ['livability', 'economy', 'housing', 'demographics', 'transit', 'parks'];
+      categories.forEach(cat => {
+        const score = scores.breakdown[cat];
+        if (score != null) {
+          const div = document.createElement('div');
+          div.className = 'breakdown-item';
+          div.innerHTML = `
+            <div class="label">${cat.charAt(0).toUpperCase() + cat.slice(1)}</div>
+            <div class="value" style="color: ${InSite.ScoringEngine.getScoreColor(score)}">${Math.round(score)}</div>
+          `;
+          breakdownEl.appendChild(div);
+        }
+      });
+
+      // Generate and analyze trends
+      const trends = mockProvider.generateTrends(neighborhood.metrics.avg_value, { periods: 60 });
+      const trendAnalysis = trendAnalyzer.analyzeTrend(trends);
+      const forecast = trendAnalyzer.forecast(trends.map(t => t.value), 12);
+
+      document.getElementById('trendDirection').innerHTML = 
+        `<span class="trend-${trendAnalysis.direction}">${trendAnalysis.direction.toUpperCase()}</span>`;
+      document.getElementById('trendChange').innerHTML = 
+        `<span class="trend-${trendAnalysis.direction}">${trendAnalysis.changePercent > 0 ? '+' : ''}${trendAnalysis.changePercent}%</span>`;
+      document.getElementById('forecast').textContent = 
+        InSite.Formatters.currency(forecast.predictions[11]?.value);
+
+      // Generate insights
+      const insights = generateInsights(neighborhood, scores, trendAnalysis);
+      const insightsList = document.getElementById('insightsList');
+      insightsList.innerHTML = '';
+      insights.forEach(insight => {
+        const div = document.createElement('div');
+        div.className = `insight ${insight.type}`;
+        div.innerHTML = `
+          <div class="insight-type">${insight.type}</div>
+          <div>${insight.content}</div>
+        `;
+        insightsList.appendChild(div);
+      });
+
+      // Find similar neighborhoods
+      const similar = scoringEngine.findSimilar(zip, 3);
+      const similarList = document.getElementById('similarList');
+      similarList.innerHTML = '';
+      similar.forEach(s => {
+        if (s.zipCode !== zip) {
+          const div = document.createElement('div');
+          div.className = 'stat';
+          div.innerHTML = `
+            <div class="stat-label">${s.zipCode}</div>
+            <div class="stat-value">${Math.round(s.similarityScore * 100)}% match</div>
+          `;
+          div.style.cursor = 'pointer';
+          div.onclick = () => {
+            document.getElementById('zipInput').value = s.zipCode;
+            loadNeighborhood();
+          };
+          similarList.appendChild(div);
+        }
+      });
+    }
+
+    function generateInsights(neighborhood, scores, trend) {
+      const insights = [];
+      const m = neighborhood.metrics;
+
+      if (scores.overall >= 80) {
+        insights.push({
+          type: 'strength',
+          content: `${neighborhood.name} scores in the top tier with an overall score of ${scores.overall}. This is a highly desirable area.`
+        });
+      }
+
+      if (m.appreciation_1y > 10) {
+        insights.push({
+          type: 'opportunity',
+          content: `Strong appreciation of ${m.appreciation_1y.toFixed(1)}% over the past year indicates robust demand.`
+        });
+      }
+
+      if (m.crime_rate < 25) {
+        insights.push({
+          type: 'strength',
+          content: `Low crime rate makes this one of the safer neighborhoods in the metro area.`
+        });
+      } else if (m.crime_rate > 50) {
+        insights.push({
+          type: 'risk',
+          content: `Higher than average crime rate may impact property values and quality of life.`
+        });
+      }
+
+      if (trend.direction === 'up' && trend.strength === 'strong') {
+        insights.push({
+          type: 'opportunity',
+          content: `Property values are on a strong upward trajectory, having increased ${trend.changePercent}% over 5 years.`
+        });
+      }
+
+      return insights;
+    }
+
+    // Load initial neighborhood
+    loadNeighborhood();
+  </script>
+</body>
+</html>

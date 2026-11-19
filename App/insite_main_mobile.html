@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <!-- Security Headers -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://api.mapbox.com https://unpkg.com https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; img-src 'self' data: https: blob: https://maps.googleapis.com https://maps.gstatic.com; connect-src 'self' https: wss: blob: https://maps.googleapis.com; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self';">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  
+  <link rel="icon" type="image/png" href="insite_new_logo.png">
+  <link rel="apple-touch-icon" href="insite_new_logo.png">
+  <link rel="manifest" href="manifest.json">
+  <title>InSite Mobile - Atlanta Property Intelligence</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-light: #6366f1;
+      --primary-dark: #4338ca;
+      --secondary: #0ea5e9;
+      --accent: #06b6d4;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #111827;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --bg-tertiary: #1f2937;
+      --border: #374151;
+      --safe-area-top: env(safe-area-inset-top);
+      --safe-area-bottom: env(safe-area-inset-bottom);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0e1a;
+      color: var(--text-primary);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      touch-action: pan-y;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.12) 0%, transparent 50%);
+      
+      z-index: 0;
+      pointer-events: none;
+    
+
+    
+      
+    }
+
+    /* Mobile Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      z-index: 1000;
+      display: flex;
+      justify-content: space-around;
+      padding: 0.5rem 0 calc(0.5rem + var(--safe-area-bottom));
+    }
+
+    .nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.6rem;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .nav-btn span {
+      font-size: 0.9rem;
+    }
+
+    .nav-btn.active {
+      color: var(--primary);
+    }
+
+    .nav-btn.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      border-radius: 0 0 3px 3px;
+      box-shadow: 0 2px 10px rgba(99, 102, 241, 0.6);
+    }
+
+    .tab-content {
+      display: none;
+      padding: 1rem 1rem calc(5rem + var(--safe-area-bottom));
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      overflow-y: auto;
+      max-height: 100vh;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tab-content.active {
+      display: block;
+      
+    }
+
+    
+      to { opacity: 1; }
+    
+
+    /* Mobile Header */
+    .mobile-header {
+      padding: calc(1rem + var(--safe-area-top)) 1rem 1rem;
+      text-align: center;
+      position: relative;
+    }
+
+    .mobile-header h1 {
+      font-size: 1.125rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, var(--primary-light) 50%, var(--secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+
+    .mobile-header p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* Mobile Logo */
+    .mobile-logo {
+      display: block;
+      margin: 0 auto 1rem;
+      max-width: 200px;
+      height: auto;
+      filter: drop-shadow(0 4px 15px rgba(99, 102, 241, 0.3));
+    }
+
+    /* Glass Card */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .glass-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Mobile Input */
+    .mobile-input {
+      width: 100%;
+      padding: 1rem 1.3rem;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.06);
+      
+      color: var(--text-primary);
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .mobile-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15),
+                  inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Mobile Button */
+    .mobile-btn {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 16px;
+      border: none;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mobile-btn:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    }
+
+    /* Glass Input & Button forAnalytics */
+    .glass-input {
+      width: 100%;
+      padding: 1rem 1.3rem;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.06);
+      
+      color: var(--text-primary);
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .glass-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15),
+                  inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .glass-btn {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 16px;
+      border: none;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      transition: all 0.3s ease;
+      margin-top: 0.8rem;
+    }
+
+    .glass-btn:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    }
+
+    .search-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.04);
+      
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 1.2rem 1rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      opacity: 0.8;
+    }
+
+    .stat-label {
+      color: var(--text-secondary);
+      font-size: 0.7rem;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    .stat-value {
+      color: var(--text-primary);
+      font-size: 1rem;
+      font-weight: 800;
+      line-height: 1.2;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .stat-value.gradient-green {
+      background: linear-gradient(135deg, var(--success), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-value.gradient-purple {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-value.gradient-pink {
+      background: linear-gradient(135deg, var(--secondary), var(--warning));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 0.6rem;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+    }
+
+    /* Chart Container */
+    .chart-container {
+      margin-bottom: 1rem;
+    }
+
+    .chart-container h3 {
+      background: linear-gradient(135deg, var(--success), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      font-weight: 800;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      height: 250px;
+      margin-bottom: 1rem;
+    }
+
+    /* Horizontal scrolling for comparison charts (mobile) */
+    .comparison-charts-container {
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x mandatory;
+      display: flex;
+      gap: 1rem;
+      padding: 0.5rem 0 1rem 0;
+      margin: 0 -1rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    .comparison-chart-item {
+      flex: 0 0 90%;
+      scroll-snap-align: start;
+      min-width: 280px;
+    }
+
+    .comparison-chart-item .chart-wrapper {
+      height: 220px;
+    }
+
+    /* Pills */
+    .zip-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    /* Search Mode Toggle (Mobile App) */
+    .search-mode-toggle {
+      display: flex;
+      gap: 0.3rem;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 10px;
+      padding: 0.3rem;
+      flex-shrink: 0;
+      min-width: 120px;
+    }
+
+    .search-mode-btn-mobile {
+      flex: 1;
+      padding: 0.5rem 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .search-mode-btn-mobile.active {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+    }
+
+    .search-mode-btn-mobile:active {
+      transform: scale(0.97);
+    }
+
+    .zip-pill {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      padding: 0.6rem 1rem;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .zip-pill button {
+      background: rgba(255, 255, 255, 0.25);
+      border: none;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    /* Accordion for mobile comparison */
+    .accordion {
+      margin-bottom: 1rem;
+    }
+
+    .accordion-item {
+      background: rgba(255, 255, 255, 0.04);
+      
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      margin-bottom: 0.6rem;
+      overflow: hidden;
+    }
+
+    .accordion-header {
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .accordion-header span {
+      transition: transform 0.3s ease;
+    }
+
+    .accordion-header.active span {
+      transform: rotate(180deg);
+    }
+
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+
+    .accordion-content.active {
+      max-height: 500px;
+      padding: 0 1rem 1rem;
+    }
+
+    /* Demo Cards */
+    .demo-card {
+      background: rgba(255, 255, 255, 0.03);
+      
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 1.2rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .demo-card h4 {
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .demo-card p {
+      color: var(--text-primary);
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+
+    /* Insights */
+    .insights-section {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(236, 72, 153, 0.1));
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      
+    }
+
+    .insights-section h3 {
+      background: linear-gradient(135deg, var(--secondary), var(--warning));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      font-weight: 800;
+    }
+
+    .insight-item {
+      padding: 1rem;
+      margin: 0.6rem 0;
+      background: rgba(255, 255, 255, 0.04);
+      border-left: 3px solid var(--primary);
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .insight-item strong {
+      color: var(--accent);
+      font-weight: 800;
+    }
+
+    /* Comparison Table */
+    .comparison-accordion {
+      background: rgba(255, 255, 255, 0.04);
+      
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+
+    .comparison-accordion .accordion-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .comparison-accordion .accordion-arrow {
+      transition: transform 0.3s ease;
+    }
+
+    .comparison-accordion.active .accordion-arrow {
+      transform: rotate(180deg);
+    }
+
+    .comparison-accordion .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+
+    .comparison-accordion.active .accordion-content {
+      max-height: 1000px;
+      padding: 0 1rem 1rem;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 0.8rem 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .comparison-table th {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .comparison-table td {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /*Analytics Stats */
+    .stat-mini {
+      background: rgba(255, 255, 255, 0.04);
+      
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 1rem;
+      text-align: center;
+      word-wrap: break-word;
+      overflow: hidden;
+    }
+
+    .stat-mini .stat-label {
+      color: var(--text-secondary);
+      font-size: 0.7rem;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    .stat-mini .stat-value {
+      color: var(--text-primary);
+      font-size: 1.1rem;
+      font-weight: 800;
+      word-break: break-all;
+    }
+
+    /*Map Container */
+    .map-container {
+      width: 100%;
+      height: 300px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-top: 1rem;
+    }
+
+    /* AI Summary Section - Mobile Optimized */
+    .ai-summary-section {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(99, 102, 241, 0.1));
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 16px;
+      padding: 0;
+      margin: 1rem 0;
+      
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      overflow: hidden;
+    }
+
+    .ai-summary-header {
+      background: linear-gradient(135deg, var(--accent), var(--primary));
+      padding: 1.2rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .ai-summary-header h3 {
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin: 0;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .ai-summary-content {
+      padding: 1.2rem;
+      line-height: 1.7;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .ai-summary-content p {
+      margin-bottom: 1rem;
+      text-align: justify;
+    }
+
+    .ai-summary-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    .ai-summary-highlight {
+      color: var(--accent);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--primary-light));
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      padding: 0 0.15rem;
+    }
+
+    .ai-summary-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(6, 182, 212, 0.15));
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: var(--primary-light);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin: 0 0.2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      box-shadow: 0 2px 6px rgba(99, 102, 241, 0.2);
+    }
+
+    .ai-summary-badge.positive {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.15));
+      border-color: rgba(16, 185, 129, 0.4);
+      color: var(--success);
+    }
+
+    .ai-summary-badge.warning {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(236, 72, 153, 0.15));
+      border-color: rgba(245, 158, 11, 0.4);
+      color: var(--warning);
+    }
+
+    .ai-summary-badge.info {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(99, 102, 241, 0.15));
+      border-color: rgba(6, 182, 212, 0.4);
+      color: var(--accent);
+    }
+
+    /* Full ScreenMap */
+    #mapTab {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: calc(4rem + var(--safe-area-bottom));
+      padding: 0;
+    }
+
+    #mapTab iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Loading States */
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+    }
+
+    .loading::after {
+      content: '...';
+      animation: dots 1.5s infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60%, 100% { content: '...'; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.5);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <!--Explore Tab -->
+  <div id="exploreTab" class="tab-content active">
+    <div class="mobile-header">
+      <h1 style="background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.125rem; font-weight: 800;">Explore</h1>
+    </div>
+    
+    <div class="glass-card">
+      <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem;">
+        <input type="text" class="mobile-input" id="exploreZipInput" placeholder="Enter ZIP, city, or neighborhood..." list="exploreSearchList" style="flex: 1; margin-bottom: 0;">
+        <div class="search-mode-toggle" style="margin-top: 0;">
+          <button class="search-mode-btn-mobile active" id="explore-mode-zip">ZIP</button>
+          <button class="search-mode-btn-mobile" id="explore-mode-city">City</button>
+        </div>
+      </div>
+      <datalist id="exploreSearchList"></datalist>
+      
+      <button class="mobile-btn" onclick="exploreZip()">Search</button>
+    </div>
+
+    <div id="exploreResults" style="display: none;">
+      <div class="stats-grid" id="exploreStatsGrid"></div>
+      
+      <div class="glass-card">
+        <h3 style="background: linear-gradient(135deg, var(--success), var(--accent)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; font-size: 0.875rem; font-weight: 800;"> Overview</h3>
+        <div class="chart-wrapper">
+          <canvas id="exploreRadarChart"></canvas>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="explorePieChart"></canvas>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <h3 style="background: linear-gradient(135deg, var(--accent), var(--primary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; font-size: 1.3rem; font-weight: 800;"> Demographics</h3>
+        <div id="exploreDemographics"></div>
+      </div>
+
+      <div class="ai-summary-section" id="exploreAISummary"></div>
+
+      <div class="insights-section" id="exploreInsights"></div>
+
+      <div class="map-container">
+        <iframe id="exploreMapFrame" style="width:100%;height:100%;border:none;"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!--Compare Tab -->
+  <div id="compareTab" class="tab-content">
+    <div class="mobile-header">
+      <h1 style="background: linear-gradient(135deg, var(--accent), var(--success)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.125rem; font-weight: 800;">Compare</h1>
+    </div>
+    
+    <div class="glass-card">
+      <input type="text" class="mobile-input" id="compareZipInput" placeholder="Enter ZIP, city, or neighborhood..." list="compareSearchList">
+      <datalist id="compareSearchList"></datalist>
+      <button class="mobile-btn" onclick="addZipToCompare()">Add ZIP</button>
+      <div class="zip-pills" id="compareZipPills"></div>
+    </div>
+
+    <div id="compareResults" style="display: none;">
+      <div class="glass-card">
+        <h3 style="background: linear-gradient(135deg, var(--success), var(--accent)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; font-size: 0.875rem; font-weight: 800;"> Comparison</h3>
+        <div class="comparison-charts-container">
+          <div class="comparison-chart-item">
+            <div class="chart-wrapper">
+              <canvas id="compareBarChart"></canvas>
+            </div>
+          </div>
+          <div class="comparison-chart-item">
+            <div class="chart-wrapper">
+              <canvas id="compareRadarChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <h3 style="background: linear-gradient(135deg, var(--secondary), var(--warning)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; font-size: 0.875rem; font-weight: 800;"> Details</h3>
+        <div id="compareTable"></div>
+      </div>
+
+      <div class="insights-section" id="compareInsights"></div>
+    </div>
+  </div>
+
+  <!--Analytics Tab -->
+  <div id="analyticsTab" class="tab-content">
+    <div class="mobile-header">
+      <h1 style="background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.125rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+          <path d="M3 3v18h18" stroke="url(#analytics-gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M18 9l-5 5-3-3-4 4" stroke="url(#analytics-gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="18" cy="9" r="1.5" fill="url(#analytics-gradient)"/>
+          <circle cx="13" cy="14" r="1.5" fill="url(#analytics-gradient)"/>
+          <circle cx="10" cy="11" r="1.5" fill="url(#analytics-gradient)"/>
+          <circle cx="6" cy="15" r="1.5" fill="url(#analytics-gradient)"/>
+          <defs>
+            <linearGradient id="analytics-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:rgb(139, 92, 246);stop-opacity:1" />
+              <stop offset="100%" style="stop-color:rgb(236, 72, 153);stop-opacity:1" />
+            </linearGradient>
+          </defs>
+        </svg>
+        Analytics
+      </h1>
+    </div>
+    
+    <div class="glass-card">
+      <div class="search-bar">
+        <select class="glass-input" id="analyticsMetric" onchange="updateAnalytics()">
+          <option value="avg_value">Property Values</option>
+          <option value="population">Population</option>
+          <option value="median_income">Median Income</option>
+          <option value="crime_rate">Crime Rate</option>
+          <option value="housing_vacancy_rate">Vacancy Rate</option>
+        </select>
+        <button class="glass-btn" onclick="updateAnalytics()">Analyze</button>
+      </div>
+    </div>
+    
+    <div class="stats-grid" id="analyticsStatsGrid"></div>
+
+    <div class="glass-card">
+      <h3 style="background: linear-gradient(135deg, var(--success), var(--accent)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; font-size: 0.875rem; font-weight: 800;"> Distribution</h3>
+      <div class="chart-wrapper">
+        <canvas id="analyticsHistogram"></canvas>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <h3 style="background: linear-gradient(135deg, var(--warning), var(--danger)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; font-size: 0.875rem; font-weight: 800;">🏆 Top 10</h3>
+      <div class="chart-wrapper" style="height: 350px;">
+        <canvas id="analyticsTopChart"></canvas>
+      </div>
+    </div>
+
+    <div class="insights-section" id="analyticsInsights"></div>
+  </div>
+
+  <!--Map Tab -->
+  <div id="mapTab" class="tab-content">
+    <iframe src="index_mobile.html"></iframe>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" onclick="showTab('explore')">
+      <span></span>
+     Explore
+    </button>
+    <button class="nav-btn" onclick="showTab('compare')">
+      <span></span>
+     Compare
+    </button>
+    <button class="nav-btn" onclick="showTab('analytics')">
+      <span></span>
+     Analytics
+    </button>
+    <button class="nav-btn" onclick="showTab('map')">
+      <span></span>
+     Map
+    </button>
+  </div>
+
+  <script>
+    // SEARCH MODE TOGGLE (MOBILE APP)
+    let exploreSearchMode = 'zip'; // 'zip' or 'city'
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      const zipBtn = document.getElementById('explore-mode-zip');
+      const cityBtn = document.getElementById('explore-mode-city');
+      const searchInput = document.getElementById('exploreZipInput');
+      
+      function setExploreMode(mode) {
+        exploreSearchMode = mode;
+        if (mode === 'zip') {
+          zipBtn.classList.add('active');
+          cityBtn.classList.remove('active');
+          searchInput.placeholder = 'Enter ZIP code...';
+        } else {
+          zipBtn.classList.remove('active');
+          cityBtn.classList.add('active');
+          searchInput.placeholder = 'Enter city name (shows avg data)...';
+        }
+      }
+      
+      zipBtn.addEventListener('click', () => setExploreMode('zip'));
+      cityBtn.addEventListener('click', () => setExploreMode('city'));
+    });
+
+    // Security: Input sanitization
+    function sanitizeInput(input) {
+      if (typeof input !== 'string') return '';
+      const div = document.createElement('div');
+      div.textContent = input.trim();
+      return div.innerHTML;
+    }
+
+    // Security: Validate ZIP code format
+    function isValidZipCode(zip) {
+      return /^[0-9]{5}$/.test(zip);
+    }
+
+    let zipData = {};
+    let allZipCodes = [];
+    let compareZips = [];
+    let charts = {};
+
+    // Load data
+    async function loadData() {
+      try {
+        const response = await fetch("USPS_Zip_Codes_enriched.geojson");
+        const geoData = await response.json();
+        
+        const searchTerms = new Set();
+        
+        geoData.features.forEach(f => {
+          const zip = f.properties.NAME || f.properties.zip;
+          if (zip) {
+            zipData[zip] = {
+              zip: zip,
+              avg_value: f.properties.avg_value || 0,
+              population: f.properties.population || 0,
+              median_income: f.properties.median_income || 0,
+              crime_rate: f.properties.crime_rate || 0,
+              housing_vacancy_rate: f.properties.housing_vacancy_rate || 0,
+              education_levels: f.properties.education_levels || "N/A",
+              age_demographics: f.properties.age_demographics || "N/A",
+              race_demographics: f.properties.race_demographics || "N/A",
+              city: f.properties.city || "N/A",
+              neighborhood: f.properties.neighborhood || f.properties.NEIGHBORHOOD || "N/A"
+            };
+            allZipCodes.push(zip);
+            
+            // Add to search terms
+            searchTerms.add(zip);
+            if (f.properties.city) searchTerms.add(f.properties.city);
+            if (f.properties.neighborhood || f.properties.NEIGHBORHOOD) {
+              searchTerms.add(f.properties.neighborhood || f.properties.NEIGHBORHOOD);
+            }
+          }
+        });
+
+        // Populate datalist for autocomplete
+        const datalist = document.getElementById('exploreSearchList');
+        const compareDatalist = document.getElementById('compareSearchList');
+        const sortedSearchTerms = Array.from(searchTerms).sort();
+        
+        sortedSearchTerms.forEach(term => {
+          const option = document.createElement('option');
+          option.value = term;
+          datalist.appendChild(option);
+          
+          if (compareDatalist) {
+            const compareOption = document.createElement('option');
+            compareOption.value = term;
+            compareDatalist.appendChild(compareOption);
+          }
+        });
+
+        console.log(`Loaded ${allZipCodes.length} ZIP codes`);
+        
+        // Don't automatically call updateAnalytics - it will be called when tab is shown
+        // This prevents crashes when canvas elements aren't visible yet
+      } catch (error) {
+        console.error("Error loading data:", error);
+        alert("Failed to load data. Please refresh.");
+      }
+    }
+
+    // EXPLORE TAB
+    function exploreZip() {
+      const rawInput = document.getElementById('exploreZipInput').value.trim();
+      const searchInput = sanitizeInput(rawInput);
+      
+      if (!searchInput) {
+        alert("Please enter a ZIP code, city, or neighborhood name.");
+        return;
+      }
+      
+      // Ensure exploreSearchMode is defined (fix for first-click bug)
+      if (typeof exploreSearchMode === 'undefined') {
+        exploreSearchMode = 'zip';
+      }
+      
+      document.getElementById('exploreResults').style.display = 'block';
+      
+      // CITY MODE: Aggregate data for all ZIPs in a city
+      if (exploreSearchMode === 'city') {
+        const searchLower = searchInput.toLowerCase().trim();
+        const cityZips = [];
+        
+        // Find all ZIPs matching the city (case-insensitive, trimmed)
+        for (const zip in zipData) {
+          const data = zipData[zip];
+          const cityName = (data.city || '').toLowerCase().trim();
+          if (cityName && cityName === searchLower) {
+            cityZips.push(data);
+          }
+        }
+        
+        if (cityZips.length === 0) {
+          // Log available cities for debugging
+          const uniqueCities = [...new Set(Object.values(zipData).map(d => d.city).filter(c => c && c !== 'N/A'))].sort();
+          console.log('Available cities:', uniqueCities);
+          alert(`City "${searchInput}" not found! Available cities include: ${uniqueCities.slice(0, 5).join(', ')}...`);
+          document.getElementById('exploreResults').style.display = 'none';
+          return;
+        }
+        
+        // Calculate aggregated statistics
+        let totalPop = 0, totalIncome = 0, totalValue = 0, totalCrime = 0, totalVacancy = 0;
+        let count = cityZips.length;
+        const zipCodes = [];
+        
+        cityZips.forEach(data => {
+          zipCodes.push(data.zip);
+          totalPop += data.population || 0;
+          totalIncome += data.median_income || 0;
+          totalValue += data.avg_value || 0;
+          totalCrime += data.crime_rate || 0;
+          totalVacancy += data.housing_vacancy_rate || 0;
+        });
+        
+        const avgData = {
+          zip: `${searchInput} (${count} ZIPs)`,
+          avg_value: totalValue / count,
+          population: totalPop / count,
+          median_income: totalIncome / count,
+          crime_rate: totalCrime / count,
+          housing_vacancy_rate: totalVacancy / count,
+          education_levels: `Aggregated data for ${count} ZIP codes`,
+          age_demographics: `ZIP codes: ${zipCodes.join(', ')}`,
+          race_demographics: `Total population: ${totalPop.toLocaleString()}`,
+          city: searchInput,
+          neighborhood: "City Aggregate"
+        };
+        
+        displayExploreResults(avgData, true);
+        return;
+      }
+      
+      // ZIP MODE: Find single ZIP by direct match, city, or neighborhood
+      let foundZip = null;
+      const searchLower = searchInput.toLowerCase().trim();
+      
+      // First, try direct ZIP match
+      if (zipData[searchInput]) {
+        foundZip = searchInput;
+      } else {
+        // Search by city or neighborhood (first match)
+        for (const zip in zipData) {
+          const data = zipData[zip];
+          const cityName = (data.city || '').toLowerCase().trim();
+          const neighborhoodName = (data.neighborhood || '').toLowerCase().trim();
+          
+          if ((cityName && cityName === searchLower) || 
+              (neighborhoodName && neighborhoodName === searchLower)) {
+            foundZip = zip;
+            break;
+          }
+        }
+      }
+      
+      if (!foundZip) {
+        alert("Location not found! Please try a ZIP code, city, or neighborhood name.");
+        document.getElementById('exploreResults').style.display = 'none';
+        return;
+      }
+
+      const data = zipData[foundZip];
+      displayExploreResults(data, false);
+    }
+    
+    function displayExploreResults(data, isCityAggregate) {
+      const labelSuffix = isCityAggregate ? ' (Avg)' : '';
+      
+      const statsHTML = `
+        <div class="stat-card">
+          <div class="stat-label">Property Value${labelSuffix}</div>
+          <div class="stat-value gradient-green">$${(data.avg_value/1000).toFixed(0)}K</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Population${labelSuffix}</div>
+          <div class="stat-value gradient-purple">${(data.population/1000).toFixed(1)}K</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Median Income${labelSuffix}</div>
+          <div class="stat-value gradient-pink">$${(data.median_income/1000).toFixed(0)}K</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Crime Rate${labelSuffix}</div>
+          <div class="stat-value">${data.crime_rate.toFixed(1)}/100</div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${data.crime_rate}%"></div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Vacancy${labelSuffix}</div>
+          <div class="stat-value">${data.housing_vacancy_rate.toFixed(1)}%</div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${data.housing_vacancy_rate}%"></div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Score</div>
+          <div class="stat-value gradient-purple">${calculateScore(data)}/10</div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${calculateScore(data) * 10}%"></div>
+          </div>
+        </div>
+      `;
+      document.getElementById('exploreStatsGrid').innerHTML = statsHTML;
+
+      const demoHTML = `
+        <div class="demo-card">
+          <h4> Education</h4>
+          <p>${data.education_levels}</p>
+        </div>
+        <div class="demo-card">
+          <h4> Age</h4>
+          <p>${data.age_demographics}</p>
+        </div>
+        <div class="demo-card">
+          <h4> Demographics</h4>
+          <p>${data.race_demographics}</p>
+        </div>
+      `;
+      document.getElementById('exploreDemographics').innerHTML = demoHTML;
+
+      const aiSummary = generateAISummary(data);
+      document.getElementById('exploreAISummary').innerHTML = aiSummary;
+
+      const insights = generateInsights(data);
+      document.getElementById('exploreInsights').innerHTML = `
+        <h3> AI Insights</h3>
+        ${insights.map(i => `<div class="insight-item">${i}</div>`).join('')}
+      `;
+
+      createExploreCharts(data);
+      
+      // Only update map iframe in ZIP mode (not in city aggregate mode)
+      if (!isCityAggregate && data.zip && data.zip.length === 5) {
+        document.getElementById('exploreMapFrame').src = `index_mobile.html?zip=${data.zip}`;
+      }
+    }
+
+    function createExploreCharts(data) {
+      if (charts.exploreRadar) charts.exploreRadar.destroy();
+      const radarCtx = document.getElementById('exploreRadarChart').getContext('2d');
+      charts.exploreRadar = new Chart(radarCtx, {
+        type: 'radar',
+        data: {
+          labels: ['Value', 'Income', 'Pop', 'Safety', 'Occup'],
+          datasets: [{
+            label: `ZIP ${data.zip}`,
+            data: [
+              normalizeValue(data.avg_value, 0, 800000),
+              normalizeValue(data.median_income, 0, 150000),
+              normalizeValue(data.population, 0, 100000),
+              normalizeValue(100 - data.crime_rate, 0, 100),
+              normalizeValue(100 - data.housing_vacancy_rate, 0, 100)
+            ],
+            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+            borderColor: 'rgba(99, 102, 241, 1)',
+            borderWidth: 2,
+            pointBackgroundColor: 'rgba(99, 102, 241, 1)',
+            pointRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              beginAtZero: true,
+              max: 100,
+              ticks: { color: '#94a3b8', backdropColor: 'transparent', font: { size: 10 } },
+              grid: { color: 'rgba(255, 255, 255, 0.1)' },
+              pointLabels: { color: '#f1f5f9', font: { size: 10, weight: '600' } }
+            }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+
+      if (charts.explorePie) charts.explorePie.destroy();
+      const pieCtx = document.getElementById('explorePieChart').getContext('2d');
+      charts.explorePie = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Value', 'Income', 'Safety', 'Occupancy'],
+          datasets: [{
+            data: [
+              normalizeValue(data.avg_value, 0, 800000),
+              normalizeValue(data.median_income, 0, 150000),
+              normalizeValue(100 - data.crime_rate, 0, 100),
+              normalizeValue(100 - data.housing_vacancy_rate, 0, 100)
+            ],
+            backgroundColor: [
+              'rgba(16, 185, 129, 0.9)',
+              'rgba(99, 102, 241, 0.9)',
+              'rgba(6, 182, 212, 0.9)',
+              'rgba(236, 72, 153, 0.9)'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#f1f5f9', font: { size: 10 }, padding: 10 } }
+          }
+        }
+      });
+    }
+
+    // COMPARE TAB FUNCTIONS
+    function addZipToCompare() {
+      const input = document.getElementById('compareZipInput');
+      const rawInput = input.value.trim();
+      const searchInput = sanitizeInput(rawInput);
+      
+      if (!searchInput) {
+        alert("Please enter a ZIP code, city, or neighborhood name.");
+        return;
+      }
+      
+      // Find ZIP by direct match, city, or neighborhood
+      let foundZip = null;
+      const searchLower = searchInput.toLowerCase();
+      
+      // First, try direct ZIP match
+      if (zipData[searchInput]) {
+        foundZip = searchInput;
+      } else {
+        // Search by city or neighborhood
+        for (const zip in zipData) {
+          const data = zipData[zip];
+          if (data.city.toLowerCase() === searchLower || 
+              data.neighborhood.toLowerCase() === searchLower) {
+            foundZip = zip;
+            break;
+          }
+        }
+      }
+      
+      if (!foundZip) {
+        alert('Location not found! Try ZIP, city, or neighborhood.');
+        return;
+      }
+      
+      if (compareZips.includes(foundZip)) {
+        alert('ZIP already added');
+        return;
+      }
+      
+      if (compareZips.length >= 5) {
+        alert('Max 5 ZIP codes');
+        return;
+      }
+      
+      compareZips.push(foundZip);
+      input.value = '';
+      updateComparison();
+    }
+
+    function removeZipFromCompare(zip) {
+      compareZips = compareZips.filter(z => z !== zip);
+      updateComparison();
+    }
+
+    function updateComparison() {
+      const pillsContainer = document.getElementById('compareZipPills');
+      pillsContainer.innerHTML = compareZips.map(zip => 
+        `<div class="zip-pill">${zip} <button onclick="removeZipFromCompare('${zip}')" style="margin-left:8px;background:rgba(255,255,255,0.1);border:none;color:white;border-radius:4px;padding:2px 6px;cursor:pointer;">×</button></div>`
+      ).join('');
+
+      const compareResults = document.getElementById('compareResults');
+      if (compareZips.length === 0) {
+        compareResults.style.display = 'none';
+        return;
+      }
+      compareResults.style.display = 'block';
+      const compareDatasets = compareZips.map(function(zip) { return zipData[zip]; });
+      createComparisonCharts(compareDatasets);
+      createComparisonAccordion(compareDatasets);
+      // Add insights for comparison
+      var insightsHTML = '<h3> AI Insights</h3>';
+      for (var i = 0; i < compareDatasets.length; i++) {
+        var d = compareDatasets[i];
+        var insightArr = generateInsights(d);
+        for (var j = 0; j < insightArr.length; j++) {
+          insightsHTML += '<div class="insight-item"><strong>' + d.zip + ':</strong> ' + insightArr[j] + '</div>';
+        }
+      }
+      document.getElementById('compareInsights').innerHTML = insightsHTML;
+    }
+
+    function createComparisonCharts(datasets) {
+      const colors = [
+        'rgba(99, 102, 241, 0.9)',
+        'rgba(16, 185, 129, 0.9)',
+        'rgba(236, 72, 153, 0.9)',
+        'rgba(245, 158, 11, 0.9)',
+        'rgba(6, 182, 212, 0.9)'
+      ];
+
+      // Bar Chart
+      if (charts.compareBar) charts.compareBar.destroy();
+      const barCtx = document.getElementById('compareBarChart').getContext('2d');
+      charts.compareBar = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Avg Value', 'Med Income', 'Population', 'Crime', 'Vacancy'],
+          datasets: datasets.map((data, i) => ({
+            label: `ZIP ${data.zip}`,
+            data: [
+              data.avg_value / 1000,
+              data.median_income / 1000,
+              data.population / 100,
+              data.crime_rate,
+              data.housing_vacancy_rate
+            ],
+            backgroundColor: colors[i],
+            borderRadius: 6
+          }))
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.1)' } },
+            x: { ticks: { color: '#f1f5f9', font: { size: 9 } }, grid: { display: false } }
+          },
+          plugins: {
+            legend: { labels: { color: '#f1f5f9', font: { size: 10 }, padding: 8, boxWidth: 12 } }
+          }
+        }
+      });
+
+      // Radar Chart
+      if (charts.compareRadar) charts.compareRadar.destroy();
+      const radarCtx = document.getElementById('compareRadarChart').getContext('2d');
+      charts.compareRadar = new Chart(radarCtx, {
+        type: 'radar',
+        data: {
+          labels: ['Value', 'Income', 'Pop', 'Safety', 'Occup'],
+          datasets: datasets.map((data, i) => ({
+            label: `ZIP ${data.zip}`,
+            data: [
+              normalizeValue(data.avg_value, 0, 800000),
+              normalizeValue(data.median_income, 0, 150000),
+              normalizeValue(data.population, 0, 100000),
+              normalizeValue(100 - data.crime_rate, 0, 100),
+              normalizeValue(100 - data.housing_vacancy_rate, 0, 100)
+            ],
+            backgroundColor: colors[i].replace('0.9', '0.2'),
+            borderColor: colors[i],
+            borderWidth: 2,
+            pointBackgroundColor: colors[i],
+            pointRadius: 3
+          }))
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              beginAtZero: true,
+              max: 100,
+              ticks: { color: '#94a3b8', backdropColor: 'transparent', font: { size: 10 } },
+              grid: { color: 'rgba(255,255,255,0.1)' },
+              pointLabels: { color: '#f1f5f9', font: { size: 10, weight: '600' } }
+            }
+          },
+          plugins: {
+            legend: { labels: { color: '#f1f5f9', font: { size: 10 }, padding: 8, boxWidth: 12 } }
+          }
+        }
+      });
+    }
+
+    function createComparisonAccordion(datasets) {
+      const tableHTML = `
+        <div class="comparison-accordion">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            <span> Detailed Comparison Table</span>
+            <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-content">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  ${datasets.map(d => `<th>ZIP ${d.zip}</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Avg Value</td>
+                  ${datasets.map(d => `<td>$${(d.avg_value || 0).toLocaleString()}</td>`).join('')}
+                </tr>
+                <tr>
+                  <td>Med Income</td>
+                  ${datasets.map(d => `<td>$${(d.median_income || 0).toLocaleString()}</td>`).join('')}
+                </tr>
+                <tr>
+                  <td>Population</td>
+                  ${datasets.map(d => `<td>${(d.population || 0).toLocaleString()}</td>`).join('')}
+                </tr>
+                <tr>
+                  <td>Crime Rate</td>
+                  ${datasets.map(d => `<td>${(d.crime_rate || 0).toFixed(1)}%</td>`).join('')}
+                </tr>
+                <tr>
+                  <td>Vacancy</td>
+                  ${datasets.map(d => `<td>${(d.housing_vacancy_rate || 0).toFixed(1)}%</td>`).join('')}
+                </tr>
+                <tr>
+                  <td>Score</td>
+                  ${datasets.map(d => `<td><strong>${calculateScore(d).toFixed(1)}/10</strong></td>`).join('')}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+      document.getElementById('compareTable').innerHTML = tableHTML;
+    }
+
+    function toggleAccordion(header) {
+      const parent = header.parentElement;
+      parent.classList.toggle('active');
+    }
+
+    // ANALYTICS TAB FUNCTIONS
+    function updateAnalytics() {
+      try {
+        // Check if canvas elements exist
+        const topCanvas = document.getElementById('analyticsTopChart');
+        const histCanvas = document.getElementById('analyticsHistogram');
+        
+        if (!topCanvas || !histCanvas) {
+          console.warn('Analytics canvas elements not found');
+          return;
+        }
+        
+        // Get selected metric from dropdown
+        var metric = document.getElementById('analyticsMetric').value;
+        var metricConfig = {
+          avg_value: { label: 'Property Value', format: function(v) { return '$' + (v/1000).toFixed(0) + 'K'; }, max: 800000 },
+          population: { label: 'Population', format: function(v) { return (v/1000).toFixed(1) + 'K'; }, max: 100000 },
+          median_income: { label: 'Median Income', format: function(v) { return '$' + (v/1000).toFixed(0) + 'K'; }, max: 150000 },
+          crime_rate: { label: 'Crime Rate', format: function(v) { return v.toFixed(1) + '/100'; }, max: 100 },
+          housing_vacancy_rate: { label: 'Vacancy Rate', format: function(v) { return v.toFixed(1) + '%'; }, max: 100 }
+        };
+        var config = metricConfig[metric];
+        var values = Object.values(zipData).map(function(d) { return d[metric] || 0; }).filter(function(v) { return v > 0; });
+        
+        const sorted = [...values].sort((a, b) => b - a);
+      const avg = values.reduce((a, b) => a + b, 0) / values.length;
+      const median = sorted[Math.floor(sorted.length / 2)];
+      const min = sorted[sorted.length - 1];
+      const max = sorted[0];
+
+      document.getElementById('analyticsStatsGrid').innerHTML =
+        '<div class="stat-mini">' +
+          '<div class="stat-label">Average</div>' +
+          '<div class="stat-value">' + config.format(avg) + '</div>' +
+        '</div>' +
+        '<div class="stat-mini">' +
+          '<div class="stat-label">Median</div>' +
+          '<div class="stat-value">' + config.format(median) + '</div>' +
+        '</div>' +
+        '<div class="stat-mini">' +
+          '<div class="stat-label">Min</div>' +
+          '<div class="stat-value">' + config.format(min) + '</div>' +
+        '</div>' +
+        '<div class="stat-mini">' +
+          '<div class="stat-label">Max</div>' +
+          '<div class="stat-value">' + config.format(max) + '</div>' +
+        '</div>';
+      createHistogram(values, config);
+      createTopChart(metric, config);
+      // Add insights for analytics (top ZIP)
+      var topZip = Object.values(zipData).sort(function(a, b) { return (b[metric] || 0) - (a[metric] || 0); })[0];
+      var analyticsInsightsHTML = '<h3> AI Insights</h3>';
+      var topInsights = generateInsights(topZip);
+      for (var k = 0; k < topInsights.length; k++) {
+        analyticsInsightsHTML += '<div class="insight-item">' + topInsights[k] + '</div>';
+      }
+      document.getElementById('analyticsInsights').innerHTML = analyticsInsightsHTML;
+      } catch (error) {
+        console.error('Error updating analytics:', error);
+        // Silently fail - don't crash the app
+      }
+    }
+
+    function createHistogram(values, config) {
+      const bins = 12;
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const binSize = (max - min) / bins;
+      const histogram = Array(bins).fill(0);
+      
+      values.forEach(v => {
+        const binIndex = Math.min(Math.floor((v - min) / binSize), bins - 1);
+        histogram[binIndex]++;
+      });
+
+      if (charts.analyticsHist) charts.analyticsHist.destroy();
+      const ctx = document.getElementById('analyticsHistogram').getContext('2d');
+      charts.analyticsHist = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: histogram.map((_, i) => {
+            const rangeStart = min + i * binSize;
+            return `${config.format(rangeStart).split(' ')[0]}`;
+          }),
+          datasets: [{
+            label: 'Frequency',
+            data: histogram,
+            backgroundColor: 'rgba(99, 102, 241, 0.8)',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.1)' } },
+            x: { ticks: { color: '#f1f5f9', font: { size: 8 }, maxRotation: 45, minRotation: 45 }, grid: { display: false } }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+
+    function createTopChart(metric, config) {
+      const top10 = Object.values(zipData)
+        .map(d => ({ zip: d.zip, value: d[metric] || 0 }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10);
+
+      if (charts.analyticsTop) charts.analyticsTop.destroy();
+      const ctx = document.getElementById('analyticsTopChart').getContext('2d');
+      charts.analyticsTop = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: top10.map(d => d.zip),
+          datasets: [{
+            label: config.label,
+            data: top10.map(d => d.value),
+            backgroundColor: 'rgba(16, 185, 129, 0.9)',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { beginAtZero: true, ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.1)' } },
+            y: { ticks: { color: '#f1f5f9', font: { size: 10 } }, grid: { display: false } }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+
+    // UTILITY FUNCTIONS
+    function calculateScore(data) {
+      const valueScore = normalizeValue(data.avg_value, 0, 800000) / 10;
+      const incomeScore = normalizeValue(data.median_income, 0, 150000) / 10;
+      const safetyScore = normalizeValue(100 - (data.crime_rate || 50), 0, 100) / 10;
+      const occupScore = normalizeValue(100 - (data.housing_vacancy_rate || 10), 0, 100) / 10;
+      return +(valueScore * 0.3 + incomeScore * 0.3 + safetyScore * 0.25 + occupScore * 0.15).toFixed(1);
+    }
+
+    function normalizeValue(value, min, max) {
+      return Math.min(Math.max(((value - min) / (max - min)) * 100, 0), 100);
+    }
+
+    function generateAISummary(data) {
+      const score = calculateScore(data);
+      const valuePercentile = normalizeValue(data.avg_value, 0, 800000);
+      const incomePercentile = normalizeValue(data.median_income, 0, 150000);
+      const safetyScore = 100 - data.crime_rate;
+      const occupancyScore = 100 - data.housing_vacancy_rate;
+      
+      // Market classification
+      let marketType = '';
+      let investmentPotential = '';
+      if (data.avg_value > 500000) {
+        marketType = '<span class="ai-summary-badge positive">Premium</span>';
+        investmentPotential = 'excellent long-term growth';
+      } else if (data.avg_value > 300000) {
+        marketType = '<span class="ai-summary-badge info">Mid-Tier</span>';
+        investmentPotential = 'balanced growth potential';
+      } else {
+        marketType = '<span class="ai-summary-badge warning">Value</span>';
+        investmentPotential = 'strong value opportunity';
+      }
+
+      // Safety assessment
+      let safetyAssessment = '';
+      if (safetyScore >= 80) {
+        safetyAssessment = '<span class="ai-summary-highlight">very safe</span>';
+      } else if (safetyScore >= 60) {
+        safetyAssessment = '<span class="ai-summary-highlight">moderately safe</span>';
+      } else {
+        safetyAssessment = 'developing area';
+      }
+
+      // Income analysis
+      let incomeProfile = '';
+      if (data.median_income > 100000) {
+        incomeProfile = '<span class="ai-summary-highlight">affluent residents ($100K+ income)</span>';
+      } else if (data.median_income > 60000) {
+        incomeProfile = '<span class="ai-summary-highlight">middle-income demographic</span>';
+      } else {
+        incomeProfile = 'working-class community';
+      }
+
+      // Vacancy insight
+      let vacancyInsight = '';
+      if (data.housing_vacancy_rate < 10) {
+        vacancyInsight = '<span class="ai-summary-highlight">strong demand (low vacancy)</span>';
+      } else if (data.housing_vacancy_rate < 20) {
+        vacancyInsight = 'steady market activity';
+      } else {
+        vacancyInsight = 'softer demand conditions';
+      }
+
+      // Build mobile-optimized summary
+      const summary = `
+        <div class="ai-summary-header">
+          <h3>🤖 AI Intelligence</h3>
+        </div>
+        <div class="ai-summary-content">
+          <p>
+            ZIP ${data.zip} is a ${marketType} market with <span class="ai-summary-highlight">$${data.avg_value.toLocaleString()}</span> avg. property value and <span class="ai-summary-highlight">${data.population.toLocaleString()}</span> residents. Shows ${investmentPotential} with ${incomeProfile}.
+          </p>
+          <p>
+            Community is ${safetyAssessment} (crime: ${data.crime_rate}/100). Demographics: ${data.race_demographics.toLowerCase()}. Education: ${data.education_levels.toLowerCase()}. Age: ${data.age_demographics.toLowerCase()}.
+          </p>
+          <p>
+            <strong>Score:</strong> <span class="ai-summary-badge ${score >= 8 ? 'positive' : score >= 6 ? 'info' : 'warning'}">${score}/10</span>
+            ${score >= 8 ? 'Exceptional opportunity with strong fundamentals.' : 
+              score >= 6 ? 'Solid investment with balanced metrics.' : 
+              'Value play for strategic investors.'}
+            Market shows ${vacancyInsight}.
+          </p>
+        </div>
+      `;
+
+      return summary;
+    }
+
+    function generateInsights(data) {
+      const insights = [];
+      const score = calculateScore(data);
+      
+      if (score >= 7.5) insights.push(' Premium market area with strong fundamentals');
+      else if (score >= 6) insights.push('✅ Solid investment opportunity');
+      else insights.push(' Emerging market - higher risk/reward');
+      
+      if (data.avg_value > 500000) insights.push(' High-value property market');
+      if (data.median_income > 100000) insights.push(' Affluent demographic profile');
+      if (data.crime_rate < 30) insights.push(' Low crime - family-friendly area');
+      if (data.housing_vacancy_rate < 5) insights.push(' High occupancy - strong demand');
+      if (data.population > 50000) insights.push(' Large population base');
+      
+      return insights;
+    }
+
+    function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+      
+      document.getElementById(tabName + 'Tab').classList.add('active');
+      const navButtons = document.querySelectorAll('.nav-btn');
+      const tabIndex = ['explore', 'compare', 'analytics', 'map'].indexOf(tabName);
+      if (tabIndex >= 0) {
+        navButtons[tabIndex].classList.add('active');
+      }
+      
+      if (tabName === 'analytics' && Object.keys(zipData).length > 0) {
+        setTimeout(() => updateAnalytics(), 100);
+      }
+    }
+
+    // Initialize
+    loadData();
+  </script>
+</body>
+</html>

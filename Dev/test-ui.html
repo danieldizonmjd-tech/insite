@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InSite UI Test</title>
+  <link rel="stylesheet" href="map-reorganized.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    /* Mock map background */
+    #map {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e293b 100%);
+    }
+    
+    /* Test message */
+    .test-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(99, 102, 241, 0.9);
+      padding: 40px;
+      border-radius: 12px;
+      color: white;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+      z-index: 50;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+    
+    .test-message h2 {
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    
+    .test-message ul {
+      text-align: left;
+      margin-top: 20px;
+      list-style: none;
+    }
+    
+    .test-message li {
+      margin: 10px 0;
+      padding-left: 25px;
+      position: relative;
+    }
+    
+    .test-message li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #10b981;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <!-- Map Container -->
+  <div id="map"></div>
+  
+  <!-- Test Message -->
+  <div class="test-message">
+    <h2>🎉 InSite UI Test Page</h2>
+    <p>Click the buttons below to test each feature:</p>
+    <ul>
+      <li>Click filter icon to toggle filters</li>
+      <li>Hover over map to see score ring</li>
+      <li>Click "Show Info Cards" button</li>
+      <li>Change data layer in dropdown</li>
+    </ul>
+  </div>
+  
+  <!-- Loading Bar -->
+  <div id="loading-bar"></div>
+  
+  <!-- Top Bar -->
+  <div id="top-bar">
+    <!-- Logo -->
+    <div id="logo">
+      <span style="font-size: 24px;">🗺️</span>
+      <span>INSITE</span>
+    </div>
+    
+    <!-- Search Container -->
+    <div id="search-container">
+      <div id="search-wrapper">
+        <button id="search-button" title="Search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+        </button>
+        <input id="search-input" type="text" placeholder="Search ZIP code, city, or neighborhood..." autocomplete="off">
+      </div>
+    </div>
+    
+    <!-- Search Mode Toggle -->
+    <div id="search-mode-toggle">
+      <button class="search-mode-btn active" data-mode="zip">ZIP</button>
+      <button class="search-mode-btn" data-mode="city">City</button>
+      <button class="search-mode-btn" data-mode="neighborhood">Area</button>
+    </div>
+    
+    <!-- Data Layer Selector -->
+    <div id="data-layer-selector">
+      <span id="data-layer-label">Data:</span>
+      <select id="color-by-select">
+        <option value="area_rating">Overall Rating</option>
+        <option value="avg_value">Home Value</option>
+        <option value="population">Population</option>
+      </select>
+    </div>
+    
+    <!-- Control Buttons -->
+    <div id="controls">
+      <button class="icon-btn" id="filters-toggle" title="Toggle filters">
+        <i class="fa-solid fa-filter"></i>
+      </button>
+      <button class="icon-btn" id="test-info-cards" title="Test info cards">
+        <i class="fa-solid fa-chart-simple"></i>
+      </button>
+      <button class="icon-btn" id="view-toggle" title="Toggle map style">
+        <i class="fa-solid fa-map"></i>
+      </button>
+    </div>
+  </div>
+  
+  <!-- Filters Panel -->
+  <div id="filters-panel">
+    <div id="filters-header">
+      <div id="filters-title">
+        <i class="fa-solid fa-filter"></i>
+        FILTERS
+      </div>
+      <button id="filters-close">×</button>
+    </div>
+    <div id="filters-content">
+      <div class="filter-group">
+        <div class="filter-label">
+          <i class="fa-solid fa-dollar-sign"></i>
+          Home Value Range
+        </div>
+        <div class="filter-range">
+          <input type="number" id="value-min" placeholder="Min" class="filter-input">
+          <span>—</span>
+          <input type="number" id="value-max" placeholder="Max" class="filter-input">
+        </div>
+      </div>
+      
+      <div class="filter-group">
+        <div class="filter-label">
+          <i class="fa-solid fa-users"></i>
+          Population
+        </div>
+        <div class="filter-range">
+          <input type="number" id="pop-min" placeholder="Min" class="filter-input">
+          <span>—</span>
+          <input type="number" id="pop-max" placeholder="Max" class="filter-input">
+        </div>
+      </div>
+      
+      <button id="filters-reset" class="filter-action-btn">
+        <i class="fa-solid fa-rotate-left"></i>
+        Reset Filters
+      </button>
+    </div>
+  </div>
+  
+  <!-- Info Cards Panel -->
+  <div id="info-cards-panel">
+    <div id="info-cards-header">
+      <div id="info-cards-title">
+        <i class="fa-solid fa-chart-simple"></i>
+        Quick Overview
+      </div>
+      <button id="info-cards-close">×</button>
+    </div>
+    <div id="info-cards-grid">
+      <div class="info-card excellent">
+        <div class="info-card-icon"><i class="fa-solid fa-home"></i></div>
+        <div class="info-card-label">Median Value</div>
+        <div class="info-card-value">$450K</div>
+      </div>
+      <div class="info-card good">
+        <div class="info-card-icon"><i class="fa-solid fa-users"></i></div>
+        <div class="info-card-label">Population</div>
+        <div class="info-card-value">45.2K</div>
+      </div>
+      <div class="info-card average">
+        <div class="info-card-icon"><i class="fa-solid fa-sack-dollar"></i></div>
+        <div class="info-card-label">Med. Income</div>
+        <div class="info-card-value">$78K</div>
+      </div>
+      <div class="info-card excellent">
+        <div class="info-card-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="info-card-label">Crime Rate</div>
+        <div class="info-card-value">2.4</div>
+      </div>
+      <div class="info-card good">
+        <div class="info-card-icon"><i class="fa-solid fa-bus"></i></div>
+        <div class="info-card-label">Transit Score</div>
+        <div class="info-card-value">75</div>
+      </div>
+      <div class="info-card average">
+        <div class="info-card-icon"><i class="fa-solid fa-tree"></i></div>
+        <div class="info-card-label">Parks Score</div>
+        <div class="info-card-value">68</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Legend Panel -->
+  <div id="legend-panel">
+    <div id="legend-header">
+      <div id="legend-title">Overall Rating</div>
+      <button id="legend-collapse-btn">−</button>
+    </div>
+    <div id="legend-content">
+      <div id="legend-gradient"></div>
+      <div class="legend-labels">
+        <span id="legend-min">Low</span>
+        <span id="legend-mid">Mid</span>
+        <span id="legend-max">High</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Score Ring Overlay -->
+  <div id="score-ring-overlay">
+    <div class="score-ring-container">
+      <div class="score-ring-bg"></div>
+      <svg class="score-ring-svg" viewBox="0 0 60 60">
+        <circle class="score-ring-track" cx="30" cy="30" r="25"></circle>
+        <circle class="score-ring-progress" cx="30" cy="30" r="25"></circle>
+      </svg>
+      <div class="score-ring-text">
+        <div class="score-ring-value" id="score-ring-value">85</div>
+        <div class="score-ring-label">SCORE</div>
+      </div>
+    </div>
+    <div id="score-ring-location">Atlanta, GA 30308</div>
+  </div>
+  
+  <!-- UI Interactions Script -->
+  <script src="ui-interactions.js"></script>
+  
+  <!-- Test Script -->
+  <script>
+    // Wait for UI to load
+    setTimeout(() => {
+      // Test button to show info cards
+      document.getElementById('test-info-cards').addEventListener('click', () => {
+        const testData = {
+          avg_value: 450000,
+          population: 45200,
+          median_income: 78000,
+          crime_rate: 2.4,
+          transit_score: 75,
+          parks_score: 68,
+          area_rating: 85
+        };
+        window.MapUI.showInfoCards(testData);
+      });
+      
+      // Test score ring on hover
+      document.getElementById('map').addEventListener('mousemove', (e) => {
+        if (e.target.id === 'map') {
+          window.MapUI.showScoreRing(e.pageX, e.pageY, 85, 'Atlanta, GA 30308');
+        }
+      });
+      
+      document.getElementById('map').addEventListener('mouseleave', () => {
+        window.MapUI.hideScoreRing();
+      });
+      
+      // Show legend
+      document.getElementById('legend-panel').style.opacity = '1';
+      document.getElementById('legend-panel').style.transform = 'translateX(0)';
+      
+      console.log('✅ Test page loaded!');
+      console.log('📋 Available commands:');
+      console.log('  - window.MapUI.toggleFilters()');
+      console.log('  - window.MapUI.showInfoCards(data)');
+      console.log('  - window.MapUI.showScoreRing(x, y, score, location)');
+    }, 500);
+  </script>
+</body>
+</html>

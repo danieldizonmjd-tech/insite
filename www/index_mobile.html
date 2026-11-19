@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <!-- Security Headers for Google Maps -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; img-src 'self' data: https: blob: https://maps.googleapis.com https://maps.gstatic.com; connect-src 'self' https: wss: https://maps.googleapis.com; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self';">
+  
+  <title>INSITE - Atlanta Property Map</title>
+  <link rel="icon" type="image/png" href="insite_new_logo.png">
+  <link rel="apple-touch-icon" href="insite_new_logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #8b5cf6;
+      --secondary: #06b6d4;
+      --accent: #ec4899;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --dark-bg: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --glass-bg: rgba(15, 23, 42, 0.85);
+      --glass-border: rgba(148, 163, 184, 0.15);
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark-bg);
+      color: var(--text-primary);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      touch-action: pan-y;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Mobile-First Header - Moved down for camera cutout */
+    #header {
+      position: fixed;
+      top: max(env(safe-area-inset-top), 40px); /* Avoid camera cutout */
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 12px 8px; /* Increased top/bottom padding */
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #logo {
+      height: 36px;
+      width: auto;
+      display: block;
+      filter: drop-shadow(0 2px 8px rgba(139, 92, 246, 0.3));
+    }
+
+    #menu-btn {
+      width: 44px;
+      height: 44px;
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    #menu-btn:active {
+      transform: scale(0.95);
+      background: var(--primary);
+    }
+
+    #search-input {
+      flex: 1;
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 500;
+      outline: none;
+    }
+
+    #search-input::placeholder {
+      color: var(--text-secondary);
+    }
+
+    #view-btn {
+      width: 44px;
+      height: 44px;
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    #view-btn:active {
+      transform: scale(0.95);
+    }
+
+    #view-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* Slide-out Menu Panel */
+    #menu-panel {
+      position: fixed;
+      top: 60px;
+      left: -100%;
+      width: 280px;
+      max-width: 85vw;
+      bottom: 0;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--glass-border);
+      z-index: 90;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+      padding-bottom: 20px; /* Extra padding at bottom for scroll clearance */
+    }
+
+    #menu-panel.open {
+      left: 0;
+    }
+
+    #menu-overlay {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 85;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    #menu-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .menu-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .menu-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .data-selector {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      padding: 12px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 600;
+      outline: none;
+    }
+
+    .data-selector option {
+      background: var(--dark-bg);
+    }
+
+    #legend-gradient {
+      width: 100%;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, 
+        #ef4444 0%, #fc8d59 20%, #fee08b 40%, 
+        #66bd63 60%, #1a9850 80%, #3b0764 100%);
+      margin: 8px 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .legend-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .filter-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      transition: background 0.2s;
+    }
+
+    .filter-item:active {
+      background: var(--card-bg);
+    }
+
+    .filter-item input {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--primary);
+    }
+
+    .filter-item label {
+      font-size: 14px;
+      font-weight: 500;
+      flex: 1;
+    }
+
+    /* Bottom Stats Bar */
+    #stats-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--glass-border);
+      padding: 8px;
+      z-index: 80;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #stats-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .stat-card {
+      min-width: 100px;
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Floating Details Sheet */
+    #details-sheet {
+      position: fixed;
+      bottom: -100%;
+      left: 0;
+      right: 0;
+      max-height: 80vh;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border-radius: 20px 20px 0 0;
+      z-index: 200;
+      transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+    }
+
+    #details-sheet.open {
+      bottom: 0;
+    }
+
+    #sheet-handle {
+      width: 40px;
+      height: 4px;
+      background: var(--text-secondary);
+      border-radius: 2px;
+      margin: 12px auto 8px;
+      opacity: 0.5;
+    }
+
+    #details-header {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      padding: 16px;
+      border-radius: 20px 20px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #details-title {
+      font-size: 16px;
+      font-weight: 700;
+      flex: 1;
+    }
+
+    #details-close {
+      width: 36px;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #details-content {
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    #details-content::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    #details-content::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    .detail-item {
+      margin-bottom: 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .detail-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .detail-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .detail-value {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .rating-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: linear-gradient(135deg, var(--warning), var(--danger));
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    /* Quick Preview Toast */
+    #quick-preview {
+      position: fixed;
+      bottom: 140px; /* Moved up to avoid bottom nav tabs */
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      width: calc(100vw - 32px);
+      max-width: 320px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 12px;
+      z-index: 150;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    #quick-preview.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .preview-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--primary);
+    }
+
+    .preview-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 6px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .preview-row:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .preview-label {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .preview-value {
+      font-weight: 600;
+    }
+
+    /* Comparison features removed - use Compare tab in main app */
+
+    /* Review UI */
+    .review-input {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 10px;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: inherit;
+      margin-top: 8px;
+      outline: none;
+    }
+
+    .review-textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+      margin-top: 12px;
+    }
+
+    .submit-btn:active {
+      transform: scale(0.98);
+    }
+
+    .review-card {
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 8px;
+      font-size: 11px;
+    }
+
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .review-text {
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* Loading Bar */
+    #loading-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      z-index: 1000;
+      transition: width 0.4s;
+      box-shadow: 0 0 10px var(--primary);
+    }
+
+    /* Hints Toast */
+    #hints-toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      padding: 10px 16px;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      font-size: 12px;
+      text-align: center;
+      max-width: 80vw;
+    }
+
+    #hints-toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- Header -->
+  <div id="header">
+    <button id="menu-btn">☰</button>
+    <img id="logo" src="insite_new_logo.png" alt="INSITE">
+    <input id="search-input" type="text" placeholder="Search..." list="search-list" autocomplete="off">
+    <datalist id="search-list"></datalist>
+    <button id="view-btn">🗺️</button>
+  </div>
+
+  <!-- Menu Overlay -->
+  <div id="menu-overlay"></div>
+
+  <!-- Slide-out Menu -->
+  <div id="menu-panel">
+    <div class="menu-section">
+      <div class="menu-title">📊 Data Layer</div>
+      <select class="data-selector" id="color-by-select">
+        <option value="area_rating">Overall Rating</option>
+        <option value="avg_value">Home Value</option>
+        <option value="population">Population</option>
+        <option value="median_income">Income</option>
+        <option value="crime_rate">Crime Rate</option>
+        <option value="housing_vacancy_rate">Vacancy Rate</option>
+        <option value="climate">Climate</option>
+      </select>
+    </div>
+
+    <div class="menu-section">
+      <div class="menu-title">🎨 Legend</div>
+      <div id="legend-title" style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Overall Rating</div>
+      <div id="legend-gradient"></div>
+      <div class="legend-labels">
+        <span id="legend-min">Low</span>
+        <span id="legend-max">High</span>
+      </div>
+    </div>
+
+    <div class="menu-section">
+      <div class="menu-title">🔍 Data Filters</div>
+      <div class="filter-item">
+        <input type="checkbox" id="show-population" checked onchange="window.onFilterChange()">
+        <label for="show-population">Population</label>
+      </div>
+      <div class="filter-item">
+        <input type="checkbox" id="show-income" checked onchange="window.onFilterChange()">
+        <label for="show-income">Income</label>
+      </div>
+      <div class="filter-item">
+        <input type="checkbox" id="show-crime" checked onchange="window.onFilterChange()">
+        <label for="show-crime">Crime</label>
+      </div>
+      <div class="filter-item">
+        <input type="checkbox" id="show-vacancy" checked onchange="window.onFilterChange()">
+        <label for="show-vacancy">Vacancy</label>
+      </div>
+      <div class="filter-item">
+        <input type="checkbox" id="show-race" checked onchange="window.onFilterChange()">
+        <label for="show-race">Demographics</label>
+      </div>
+      <div class="filter-item">
+        <input type="checkbox" id="show-education" checked onchange="window.onFilterChange()">
+        <label for="show-education">Education</label>
+      </div>
+      <div class="filter-item">
+        <input type="checkbox" id="show-age" checked onchange="window.onFilterChange()">
+        <label for="show-age">Age Groups</label>
+      </div>
+      <div class="filter-item">
+        <input type="checkbox" id="show-climate" checked onchange="window.onFilterChange()">
+        <label for="show-climate">Climate</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Stats Bar -->
+  <div id="stats-bar">
+    <div class="stat-card">
+      <div class="stat-label">Areas</div>
+      <div class="stat-value" id="stat-areas">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Value</div>
+      <div class="stat-value" id="stat-value">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Population</div>
+      <div class="stat-value" id="stat-pop">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Income</div>
+      <div class="stat-value" id="stat-income">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Crime/1k</div>
+      <div class="stat-value" id="stat-crime">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Rating</div>
+      <div class="stat-value" id="stat-rating">-</div>
+    </div>
+  </div>
+
+  <!-- Details Bottom Sheet -->
+  <div id="details-sheet">
+    <div id="sheet-handle"></div>
+    <div id="details-header">
+      <div id="details-title">Area Details</div>
+      <button id="details-close">&times;</button>
+    </div>
+    <div id="details-content"></div>
+  </div>
+
+  <!-- Quick Preview Toast -->
+  <div id="quick-preview">
+    <div class="preview-title" id="preview-title"></div>
+    <div id="preview-content"></div>
+  </div>
+
+  <!-- Comparison features removed - use Compare tab in main app -->
+
+  <!-- Hints Toast -->
+  <div id="hints-toast">
+    Tap area twice for details
+  </div>
+
+  <!-- Loading Bar -->
+  <div id="loading-bar"></div>
+
+  <script>
+    async function initMap() {
+      const darkStyle = [
+        {elementType: 'geometry', stylers: [{color: '#0f172a'}]},
+        {elementType: 'labels.text.fill', stylers: [{color: '#64748b'}]},
+        {elementType: 'labels.text.stroke', stylers: [{color: '#0f172a'}]},
+        {featureType: 'administrative', elementType: 'geometry', stylers: [{color: '#475569'}]},
+        {featureType: 'poi', stylers: [{visibility: 'off'}]},
+        {featureType: 'road', elementType: 'geometry', stylers: [{color: '#1e293b'}]},
+        {featureType: 'road', elementType: 'labels.icon', stylers: [{visibility: 'off'}]},
+        {featureType: 'transit', stylers: [{visibility: 'off'}]},
+        {featureType: 'water', elementType: 'geometry', stylers: [{color: '#020617'}]},
+        {featureType: 'water', elementType: 'labels.text.fill', stylers: [{color: '#334155'}]}
+      ];
+
+      let satelliteMode = false;
+      const map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 11,
+        center: { lat: 33.75, lng: -84.39 },
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
+        styles: darkStyle,
+        mapTypeControl: false,
+        fullscreenControl: false,
+        streetViewControl: false,
+        zoomControl: false,
+        gestureHandling: 'greedy',
+        disableDoubleClickZoom: true  // Disable default double-tap zoom
+      });
+
+      // Load GeoJSON
+      document.getElementById("loading-bar").style.width = "60%";
+      
+      let geoData;
+      const cacheKey = "geojson_mobile_v2";
+      
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          geoData = JSON.parse(cached);
+        } else {
+          const response = await fetch("USPS_Zip_Codes_enriched.geojson");
+          if (!response.ok) throw new Error("Failed to load data");
+          geoData = await response.json();
+          sessionStorage.setItem(cacheKey, JSON.stringify(geoData));
+        }
+      } catch (error) {
+        console.error("Data load error:", error);
+        alert("Failed to load map data. Please refresh.");
+        return;
+      }
+
+      document.getElementById("loading-bar").style.width = "100%";
+      setTimeout(() => document.getElementById("loading-bar").style.width = "0%", 500);
+
+      map.data.addGeoJson(geoData);
+
+      // Color management (same as desktop)
+      let selectedColorField = "area_rating";
+      
+      const fieldLabels = {
+        area_rating: "Overall Rating",
+        avg_value: "Home Value",
+        population: "Population",
+        median_income: "Income",
+        crime_rate: "Crime Rate",
+        housing_vacancy_rate: "Vacancy Rate",
+        climate: "Climate"
+      };
+
+      const fieldFormatters = {
+        area_rating: (v) => (Math.round(v * 10) / 10) + "/10",
+        avg_value: (v) => "$" + (v / 1000).toFixed(0) + "k",
+        population: (v) => v.toLocaleString(),
+        median_income: (v) => "$" + (v / 1000).toFixed(0) + "k",
+        crime_rate: (v) => (Math.round(v * 10) / 10).toFixed(1),
+        housing_vacancy_rate: (v) => v.toFixed(1) + "%",
+        climate: (v) => v || "Unknown"
+      };
+
+      function recalculateColorScale() {
+        if (selectedColorField === "climate") {
+          document.getElementById("legend-title").textContent = fieldLabels[selectedColorField];
+          document.getElementById("legend-min").textContent = "Varies";
+          document.getElementById("legend-max").textContent = "by Type";
+          return { minValue: 0, maxValue: 1 };
+        }
+
+        let minValue = Infinity, maxValue = -Infinity;
+        
+        if (selectedColorField === "area_rating") {
+          minValue = 1;
+          maxValue = 10;
+        } else {
+          map.data.forEach(feature => {
+            const val = feature.getProperty(selectedColorField);
+            if (val != null && !isNaN(val)) {
+              minValue = Math.min(minValue, val);
+              maxValue = Math.max(maxValue, val);
+            }
+          });
+        }
+
+        const formatter = fieldFormatters[selectedColorField];
+        document.getElementById("legend-title").textContent = fieldLabels[selectedColorField];
+        document.getElementById("legend-min").textContent = formatter(minValue);
+        document.getElementById("legend-max").textContent = formatter(maxValue);
+
+        return { minValue, maxValue };
+      }
+
+      let { minValue, maxValue } = recalculateColorScale();
+
+      function interpolateColor(t) {
+        const colors = ["#ef4444", "#fc8d59", "#fee08b", "#66bd63", "#1a9850", "#3b0764"];
+        const stops = [0, 0.2, 0.4, 0.6, 0.8, 1];
+        
+        let idx = 0;
+        for (let i = 0; i < stops.length - 1; i++) {
+          if (t >= stops[i] && t <= stops[i + 1]) {
+            idx = i;
+            break;
+          }
+        }
+        
+        const c1 = colors[idx];
+        const c2 = colors[idx + 1];
+        const localT = (t - stops[idx]) / (stops[idx + 1] - stops[idx]);
+        
+        const r1 = parseInt(c1.slice(1, 3), 16);
+        const g1 = parseInt(c1.slice(3, 5), 16);
+        const b1 = parseInt(c1.slice(5, 7), 16);
+        const r2 = parseInt(c2.slice(1, 3), 16);
+        const g2 = parseInt(c2.slice(3, 5), 16);
+        const b2 = parseInt(c2.slice(5, 7), 16);
+        
+        const r = Math.round(r1 + (r2 - r1) * localT);
+        const g = Math.round(g1 + (g2 - g1) * localT);
+        const b = Math.round(b1 + (b2 - b1) * localT);
+        
+        return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+      }
+
+      const climateColors = {
+        "Humid Subtropical": "#ef4444",
+        "Tropical": "#f59e0b",
+        "Temperate": "#10b981",
+        "Arid": "#eab308",
+        "Mediterranean": "#f97316"
+      };
+
+      function getColor(val) {
+        if (selectedColorField === "climate") {
+          return climateColors[val] || "#6b7280";
+        }
+        if (val == null || isNaN(val)) return "#374151";
+        const normalized = (val - minValue) / (maxValue - minValue);
+        return interpolateColor(Math.max(0, Math.min(1, normalized)));
+      }
+
+      // User reviews (same functions)
+      function getUserReviews(zip) {
+        const reviews = JSON.parse(localStorage.getItem("areaReviews") || "{}");
+        return reviews[zip] || [];
+      }
+
+      function addUserReview(zip, rating, comment) {
+        const reviews = JSON.parse(localStorage.getItem("areaReviews") || "{}");
+        if (!reviews[zip]) reviews[zip] = [];
+        reviews[zip].push({
+          rating: Number(rating),
+          comment: comment,
+          date: new Date().toLocaleDateString()
+        });
+        localStorage.setItem("areaReviews", JSON.stringify(reviews));
+      }
+
+      function getAverageUserRating(zip) {
+        const reviews = getUserReviews(zip);
+        if (reviews.length === 0) return null;
+        const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+        return Math.round((sum / reviews.length) * 10) / 10;
+      }
+
+      function calculateAreaRating(feature) {
+        const zip = feature.getProperty("NAME");
+        const avgValue = feature.getProperty("avg_value") || 0;
+        const medianIncome = feature.getProperty("median_income") || 0;
+        const crimeRate = feature.getProperty("crime_rate") || 0;
+        const population = feature.getProperty("population") || 0;
+
+        let score = 0, count = 0;
+
+        if (avgValue > 0) {
+          score += Math.min(10, (avgValue / 500000) * 10);
+          count++;
+        }
+        if (medianIncome > 0) {
+          score += Math.min(10, (medianIncome / 150000) * 10);
+          count++;
+        }
+        if (crimeRate >= 0) {
+          score += Math.max(0, 10 - (crimeRate / 50) * 10);
+          count++;
+        }
+        if (population > 0) {
+          const optimal = 50000;
+          const ratio = population / optimal;
+          score += ratio > 1 ? Math.max(1, 10 / Math.sqrt(ratio)) : Math.min(10, ratio * 10);
+          count++;
+        }
+
+        let dataRating = count > 0 ? score / count : 5;
+        const userRating = getAverageUserRating(zip);
+        if (userRating !== null) {
+          dataRating = (dataRating + userRating) / 2;
+        }
+
+        return Math.round(dataRating * 10) / 10;
+      }
+
+      function updateMapStyle() {
+        map.data.setStyle(feature => {
+          const val = selectedColorField === "area_rating" 
+            ? calculateAreaRating(feature)
+            : feature.getProperty(selectedColorField);
+          return {
+            fillColor: getColor(val),
+            strokeWeight: 1,
+            strokeColor: "#1e293b",
+            fillOpacity: 0.75
+          };
+        });
+      }
+
+      updateMapStyle();
+
+      document.getElementById("color-by-select").addEventListener("change", (e) => {
+        selectedColorField = e.target.value;
+        ({ minValue, maxValue } = recalculateColorScale());
+        updateMapStyle();
+      });
+
+      window.onFilterChange = () => {
+        const result = recalculateColorScale();
+        minValue = result.minValue;
+        maxValue = result.maxValue;
+        updateMapStyle();
+      };
+
+      // Mobile UI interactions
+      const menuBtn = document.getElementById("menu-btn");
+      const menuPanel = document.getElementById("menu-panel");
+      const menuOverlay = document.getElementById("menu-overlay");
+
+      menuBtn.onclick = () => {
+        menuPanel.classList.toggle("open");
+        menuOverlay.classList.toggle("show");
+      };
+
+      menuOverlay.onclick = () => {
+        menuPanel.classList.remove("open");
+        menuOverlay.classList.remove("show");
+      };
+
+      const viewBtn = document.getElementById("view-btn");
+      viewBtn.onclick = function() {
+        satelliteMode = !satelliteMode;
+        map.setMapTypeId(satelliteMode ? google.maps.MapTypeId.HYBRID : google.maps.MapTypeId.ROADMAP);
+        this.textContent = satelliteMode ? "🗺️" : "🛰️";
+        this.classList.toggle("active", satelliteMode);
+      };
+
+      // Details sheet
+      const detailsSheet = document.getElementById("details-sheet");
+      const detailsTitle = document.getElementById("details-title");
+      const detailsContent = document.getElementById("details-content");
+      
+      // Click same ZIP twice to show details - no time limit
+      let lastClickedFeature = null;
+
+      map.data.addListener("click", event => {
+        if (lastClickedFeature === event.feature) {
+          // Clicked the same ZIP twice - show details
+          showDetails(event.feature);
+          lastClickedFeature = null; // Reset after showing details
+        } else {
+          // First click or different ZIP - just record it
+          lastClickedFeature = event.feature;
+        }
+      });
+
+      function showDetails(feature) {
+        const zip = feature.getProperty("NAME");
+        const city = feature.getProperty("city") || feature.getProperty("CITY");
+        const neighborhood = feature.getProperty("neighborhood");
+        
+        let title = `ZIP ${zip || "N/A"}`;
+        if (neighborhood) title += ` • ${neighborhood}`;
+        if (city) title += `, ${city}`;
+        detailsTitle.textContent = title;
+
+        let html = "";
+
+        const rating = calculateAreaRating(feature);
+        html += `<div class="detail-item">
+          <div class="detail-label">Overall Rating</div>
+          <div class="detail-value"><span class="rating-badge">⭐ ${rating}/10</span></div>
+        </div>`;
+
+        const avgValue = feature.getProperty("avg_value");
+        if (avgValue) {
+          html += `<div class="detail-item">
+            <div class="detail-label">Average Home Value</div>
+            <div class="detail-value">$${avgValue.toLocaleString()}</div>
+          </div>`;
+        }
+
+        if (document.getElementById("show-population").checked) {
+          const pop = feature.getProperty("population");
+          if (pop) {
+            html += `<div class="detail-item">
+              <div class="detail-label">Population</div>
+              <div class="detail-value">${pop.toLocaleString()}</div>
+            </div>`;
+          }
+        }
+
+        if (document.getElementById("show-income").checked) {
+          const income = feature.getProperty("median_income");
+          if (income) {
+            html += `<div class="detail-item">
+              <div class="detail-label">Median Income</div>
+              <div class="detail-value">$${income.toLocaleString()}</div>
+            </div>`;
+          }
+        }
+
+        if (document.getElementById("show-crime").checked) {
+          const crime = feature.getProperty("crime_rate");
+          if (crime != null) {
+            html += `<div class="detail-item">
+              <div class="detail-label">Crime Rate (per 1,000)</div>
+              <div class="detail-value">${crime.toFixed(1)}</div>
+            </div>`;
+          }
+        }
+
+        if (document.getElementById("show-vacancy").checked) {
+          const vacancy = feature.getProperty("housing_vacancy_rate");
+          if (vacancy != null) {
+            html += `<div class="detail-item">
+              <div class="detail-label">Vacancy Rate</div>
+              <div class="detail-value">${vacancy.toFixed(1)}%</div>
+            </div>`;
+          }
+        }
+
+        if (document.getElementById("show-race").checked) {
+          const race = feature.getProperty("race_demographics");
+          if (race) {
+            html += `<div class="detail-item">
+              <div class="detail-label">Demographics</div>
+              <div class="detail-value">${race}</div>
+            </div>`;
+          }
+        }
+
+        if (document.getElementById("show-education").checked) {
+          const edu = feature.getProperty("education_levels");
+          if (edu) {
+            html += `<div class="detail-item">
+              <div class="detail-label">Education</div>
+              <div class="detail-value">${edu}</div>
+            </div>`;
+          }
+        }
+
+        if (document.getElementById("show-age").checked) {
+          const age = feature.getProperty("age_demographics");
+          if (age) {
+            html += `<div class="detail-item">
+              <div class="detail-label">Age Distribution</div>
+              <div class="detail-value">${age}</div>
+            </div>`;
+          }
+        }
+
+        if (document.getElementById("show-climate").checked) {
+          const climate = feature.getProperty("climate");
+          if (climate) {
+            html += `<div class="detail-item">
+              <div class="detail-label">Climate</div>
+              <div class="detail-value">${climate}</div>
+            </div>`;
+          }
+        }
+
+        // Reviews
+        const reviews = getUserReviews(zip);
+        const avgUserRating = getAverageUserRating(zip);
+
+        html += `<div class="detail-item">
+          <div class="detail-label">Community Ratings</div>
+          <div class="detail-value">${avgUserRating ? `${avgUserRating}/10 (${reviews.length} reviews)` : 'No ratings yet'}</div>
+        </div>`;
+
+        if (reviews.length > 0) {
+          html += `<div class="detail-item"><div class="detail-label">Recent Reviews</div>`;
+          reviews.slice(-3).reverse().forEach(r => {
+            html += `<div class="review-card">
+              <div class="review-header">
+                <span>⭐ ${r.rating}/10</span>
+                <span>${r.date}</span>
+              </div>
+              <div class="review-text">${r.comment || '(no comment)'}</div>
+            </div>`;
+          });
+          html += `</div>`;
+        }
+
+        html += `<div class="detail-item">
+          <div class="detail-label">Add Your Rating</div>
+          <select class="review-input" id="user-rating">
+            <option value="">Select rating...</option>
+            ${[10,9,8,7,6,5,4,3,2,1].map(n => `<option value="${n}">${n}/10</option>`).join('')}
+          </select>
+          <textarea class="review-input review-textarea" id="user-comment" placeholder="Your thoughts (optional)..."></textarea>
+          <button class="submit-btn" onclick="window.submitReview('${zip}')">Submit Rating</button>
+        </div>`;
+
+        detailsContent.innerHTML = html;
+        detailsSheet.classList.add("open");
+      }
+
+      document.getElementById("details-close").onclick = () => {
+        detailsSheet.classList.remove("open");
+      };
+
+      window.submitReview = function(zip) {
+        const rating = document.getElementById("user-rating").value;
+        const comment = document.getElementById("user-comment").value.trim();
+        
+        if (!rating) {
+          alert("Please select a rating");
+          return;
+        }
+
+        addUserReview(zip, rating, comment);
+        alert("Thank you! Rating submitted.");
+        
+        updateStats();
+        updateMapStyle();
+      };
+
+      // Quick preview on hover/touch
+      const preview = document.getElementById("quick-preview");
+      let previewTimeout;
+
+      map.data.addListener("mouseover", event => {
+        clearTimeout(previewTimeout);
+        previewTimeout = setTimeout(() => {
+          const zip = event.feature.getProperty("NAME");
+          const rating = calculateAreaRating(event.feature);
+          const avgValue = event.feature.getProperty("avg_value");
+          
+          document.getElementById("preview-title").textContent = `ZIP ${zip}`;
+          
+          let html = `<div class="preview-row">
+            <span class="preview-label">Rating</span>
+            <span class="preview-value">⭐ ${rating}/10</span>
+          </div>`;
+          
+          if (avgValue) {
+            html += `<div class="preview-row">
+              <span class="preview-label">Avg Value</span>
+              <span class="preview-value">$${(avgValue/1000).toFixed(0)}k</span>
+            </div>`;
+          }
+
+          document.getElementById("preview-content").innerHTML = html;
+          preview.classList.add("show");
+        }, 150);
+
+        map.data.overrideStyle(event.feature, {
+          fillOpacity: 0.95,
+          strokeWeight: 2,
+          strokeColor: "#8b5cf6"
+        });
+      });
+
+      map.data.addListener("mouseout", () => {
+        clearTimeout(previewTimeout);
+        preview.classList.remove("show");
+        map.data.revertStyle();
+      });
+
+      // Comparison features removed - use Compare tab in main app
+
+      // Stats
+      function updateStats() {
+        let total = 0, sumValue = 0, countValue = 0;
+        let sumPop = 0, countPop = 0;
+        let sumIncome = 0, countIncome = 0;
+        let sumCrime = 0, countCrime = 0;
+        let sumRating = 0, countRating = 0;
+        
+        const searchTerms = new Set();
+        
+        map.data.forEach(feature => {
+          const zip = feature.getProperty("NAME");
+          if (!zip) return;
+          
+          total++;
+          searchTerms.add(zip);
+          
+          const city = feature.getProperty("city") || feature.getProperty("CITY");
+          const neighborhood = feature.getProperty("neighborhood");
+          if (city) searchTerms.add(city);
+          if (neighborhood) searchTerms.add(neighborhood);
+          
+          const val = feature.getProperty("avg_value");
+          if (val > 0) { sumValue += val; countValue++; }
+          
+          const pop = feature.getProperty("population");
+          if (pop > 0) { sumPop += pop; countPop++; }
+          
+          const income = feature.getProperty("median_income");
+          if (income > 0) { sumIncome += income; countIncome++; }
+          
+          const crime = feature.getProperty("crime_rate");
+          if (crime >= 0) { sumCrime += crime; countCrime++; }
+          
+          const rating = calculateAreaRating(feature);
+          if (rating > 0) { sumRating += rating; countRating++; }
+        });
+        
+        document.getElementById("stat-areas").textContent = total;
+        document.getElementById("stat-value").textContent = countValue ? "$" + (sumValue/countValue/1000).toFixed(0) + "k" : "-";
+        document.getElementById("stat-pop").textContent = countPop ? (sumPop/countPop/1000).toFixed(0) + "k" : "-";
+        document.getElementById("stat-income").textContent = countIncome ? "$" + (sumIncome/countIncome/1000).toFixed(0) + "k" : "-";
+        document.getElementById("stat-crime").textContent = countCrime ? (sumCrime/countCrime).toFixed(1) : "-";
+        document.getElementById("stat-rating").textContent = countRating ? (sumRating/countRating).toFixed(1) : "-";
+        
+        // Search
+        const datalist = document.getElementById("search-list");
+        datalist.innerHTML = "";
+        Array.from(searchTerms).sort().forEach(term => {
+          const opt = document.createElement("option");
+          opt.value = term;
+          datalist.appendChild(opt);
+        });
+      }
+
+      updateStats();
+
+      // Search
+      document.getElementById("search-input").addEventListener("change", function() {
+        const query = this.value.trim().toLowerCase();
+        let found = false;
+        
+        map.data.forEach(feature => {
+          const zip = feature.getProperty("NAME");
+          const city = (feature.getProperty("city") || feature.getProperty("CITY") || "").toLowerCase();
+          const neighborhood = (feature.getProperty("neighborhood") || "").toLowerCase();
+          
+          if (zip === query || city === query || neighborhood === query) {
+            const bounds = new google.maps.LatLngBounds();
+            const geom = feature.getGeometry();
+            
+            function processGeom(geometry) {
+              const type = geometry.getType();
+              if (type === "Polygon") {
+                geometry.getArray().forEach(ring => {
+                  ring.getArray().forEach(latlng => bounds.extend(latlng));
+                });
+              }
+            }
+            
+            processGeom(geom);
+            map.fitBounds(bounds);
+            
+            map.data.overrideStyle(feature, {
+              fillOpacity: 1,
+              strokeWeight: 3,
+              strokeColor: "#8b5cf6"
+            });
+            
+            found = true;
+          }
+        });
+        
+        if (!found) alert("Not found!");
+      });
+
+      // Show hints
+      const hintsToast = document.getElementById("hints-toast");
+      setTimeout(() => hintsToast.classList.add("show"), 1000);
+      setTimeout(() => hintsToast.classList.remove("show"), 5000);
+    }
+  </script>
+  <script defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap"></script>
+</body>
+</html>

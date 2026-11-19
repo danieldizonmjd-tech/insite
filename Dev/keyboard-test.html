@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keyboard Shortcuts Test</title>
+  <style>
+    body {
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      background: #0a0e1a;
+      color: #f9fafb;
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #6366f1;
+      margin-bottom: 2rem;
+    }
+    .status {
+      background: #1f2937;
+      border: 2px solid #374151;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .status h3 {
+      color: #06b6d4;
+      margin-top: 0;
+    }
+    .log {
+      background: #111827;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      padding: 1rem;
+      max-height: 400px;
+      overflow-y: auto;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .log-entry {
+      padding: 0.5rem;
+      margin-bottom: 0.25rem;
+      border-radius: 4px;
+      background: rgba(99, 102, 241, 0.1);
+    }
+    .success {
+      color: #10b981;
+      font-weight: bold;
+    }
+    .info {
+      color: #06b6d4;
+    }
+    .platform {
+      display: inline-block;
+      background: #4f46e5;
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 6px;
+      font-weight: bold;
+      margin-left: 0.5rem;
+    }
+    .test-input {
+      background: #111827;
+      border: 2px solid #374151;
+      color: #f9fafb;
+      padding: 0.75rem;
+      border-radius: 8px;
+      width: 100%;
+      margin-top: 1rem;
+      font-size: 14px;
+    }
+    .test-input:focus {
+      outline: none;
+      border-color: #6366f1;
+    }
+  </style>
+</head>
+<body>
+  <h1>⌨️ Keyboard Shortcuts Diagnostic Tool</h1>
+  
+  <div class="status">
+    <h3>Platform Detection</h3>
+    <p>
+      Detected OS: <span class="platform" id="platformName">Unknown</span>
+    </p>
+    <p>
+      <span class="info">navigator.platform:</span> <span id="navPlatform"></span><br>
+      <span class="info">navigator.userAgent:</span> <span id="navUA"></span>
+    </p>
+  </div>
+
+  <div class="status">
+    <h3>Keyboard Shortcuts to Test</h3>
+    <ul>
+      <li><span class="success" id="modKey">Cmd</span> + E → Export (should log event)</li>
+      <li><span class="success" id="altKey">Option</span> + 1-5 → Tab Navigation (should log event)</li>
+      <li><span class="success">?</span> → Help (should log event)</li>
+      <li><span class="success">Enter</span> → Search in input field below</li>
+      <li><span class="success">Escape</span> → Clear input field below</li>
+    </ul>
+    <input type="text" class="test-input" id="testInput" placeholder="Type here to test Enter and Escape keys...">
+  </div>
+
+  <div class="status">
+    <h3>Event Log (Last 20 events)</h3>
+    <div class="log" id="eventLog">
+      <p class="info">Press any keyboard shortcuts to see events logged here...</p>
+    </div>
+  </div>
+
+  <script>
+    // Platform Detection
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0 || 
+                  navigator.userAgent.toUpperCase().indexOf('MAC') >= 0;
+    const modKey = isMac ? '⌘' : 'Ctrl';
+    const modKeyFull = isMac ? 'Cmd' : 'Ctrl';
+    const altKey = isMac ? '⌥' : 'Alt';
+    const altKeyFull = isMac ? 'Option' : 'Alt';
+
+    // Update UI
+    document.getElementById('platformName').textContent = isMac ? 'macOS' : 'Windows/Linux';
+    document.getElementById('navPlatform').textContent = navigator.platform;
+    document.getElementById('navUA').textContent = navigator.userAgent;
+    document.getElementById('modKey').textContent = modKeyFull;
+    document.getElementById('altKey').textContent = altKeyFull;
+
+    // Event Log
+    const logDiv = document.getElementById('eventLog');
+    const maxLogEntries = 20;
+    let logEntries = [];
+
+    function addLogEntry(message, isSuccess = false) {
+      const timestamp = new Date().toLocaleTimeString();
+      const entry = `[${timestamp}] ${message}`;
+      logEntries.unshift(entry);
+      
+      if (logEntries.length > maxLogEntries) {
+        logEntries.pop();
+      }
+      
+      logDiv.innerHTML = logEntries.map(e => {
+        const className = e.includes('✓') ? 'success' : 'info';
+        return `<div class="log-entry"><span class="${className}">${e}</span></div>`;
+      }).join('');
+    }
+
+    // Keyboard Event Listener
+    document.addEventListener('keydown', (e) => {
+      // Log all modifier key combinations
+      if (e.altKey || e.metaKey || e.ctrlKey || e.key === '?') {
+        addLogEntry(`Key: "${e.key}" | Alt: ${e.altKey} | Ctrl: ${e.ctrlKey} | Meta: ${e.metaKey} | Target: ${e.target.tagName}`);
+      }
+      
+      // Test ? key for help
+      if (e.key === '?' && !e.target.matches('input, textarea')) {
+        e.preventDefault();
+        addLogEntry('✓ Help shortcut triggered (? key)', true);
+        return;
+      }
+      
+      // Test Alt+1-5 for tabs
+      if (e.altKey && e.key >= '1' && e.key <= '5') {
+        e.preventDefault();
+        const tabs = ['Explore', 'Compare', 'Lifestyle', 'Analytics', 'Map'];
+        addLogEntry(`✓ Tab shortcut triggered: ${altKeyFull}+${e.key} → ${tabs[parseInt(e.key) - 1]} tab`, true);
+        return;
+      }
+      
+      // Test Cmd/Ctrl+E for export
+      if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+        e.preventDefault();
+        addLogEntry(`✓ Export shortcut triggered: ${modKeyFull}+E`, true);
+        return;
+      }
+      
+      // Test Enter in input
+      if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+        addLogEntry(`✓ Enter pressed in input field`, true);
+        return;
+      }
+      
+      // Test Escape in input
+      if (e.key === 'Escape' && e.target.tagName === 'INPUT') {
+        e.target.value = '';
+        addLogEntry(`✓ Escape pressed - input cleared`, true);
+        return;
+      }
+    });
+
+    // Add initial message
+    addLogEntry('Diagnostic tool ready. Start pressing keyboard shortcuts!');
+  </script>
+</body>
+</html>

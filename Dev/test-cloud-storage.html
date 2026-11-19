@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud Storage Test - InSite</title>
+  <script src="cloud-config.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #0f172a;
+      color: #f1f5f9;
+    }
+    h1 {
+      color: #8b5cf6;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #94a3b8;
+      margin-bottom: 30px;
+    }
+    .test-section {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .test-section h2 {
+      color: #06b6d4;
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+    button {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      margin: 5px;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: 'Monaco', monospace;
+      font-size: 13px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid #10b981;
+      color: #10b981;
+    }
+    .error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid #ef4444;
+      color: #ef4444;
+    }
+    .info {
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid #06b6d4;
+      color: #06b6d4;
+    }
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 3px solid rgba(139, 92, 246, 0.3);
+      border-radius: 50%;
+      border-top-color: #8b5cf6;
+      animation: spin 1s linear infinite;
+      margin-left: 10px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .url-display {
+      background: rgba(15, 23, 42, 0.75);
+      padding: 10px;
+      border-radius: 6px;
+      margin: 10px 0;
+      word-break: break-all;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌐 Google Cloud Storage Test</h1>
+  <p class="subtitle">Test your InSite data files hosted on Google Cloud Storage</p>
+
+  <!-- ZIP Codes Test -->
+  <div class="test-section">
+    <h2>📍 ZIP Codes Data</h2>
+    <button onclick="testZipCodes()">Test USPS ZIP Codes</button>
+    <button onclick="testGeorgiaZips()">Test Georgia ZIP Codes</button>
+    <div id="zip-result"></div>
+  </div>
+
+  <!-- Parks Test -->
+  <div class="test-section">
+    <h2>🌳 Parks & Green Space</h2>
+    <button onclick="testAtlantaParks()">Test Atlanta Parks</button>
+    <button onclick="testAllParks()">Test All Parks</button>
+    <div id="parks-result"></div>
+  </div>
+
+  <!-- Transit Test -->
+  <div class="test-section">
+    <h2>🚇 Transit Data</h2>
+    <button onclick="testMartaRoutes()">Test MARTA Routes</button>
+    <button onclick="testMartaStops()">Test MARTA Stops (GTFS)</button>
+    <div id="transit-result"></div>
+  </div>
+
+  <!-- Batch Test -->
+  <div class="test-section">
+    <h2>🚀 Batch Test</h2>
+    <button onclick="testAll()">Test All Files</button>
+    <div id="batch-result"></div>
+  </div>
+
+  <script>
+    function showLoading(elementId) {
+      document.getElementById(elementId).innerHTML = 
+        '<div class="result info">Loading... <span class="loading"></span></div>';
+    }
+
+    function showResult(elementId, success, message, data) {
+      const resultClass = success ? 'success' : 'error';
+      const icon = success ? '✅' : '❌';
+      let html = `<div class="result ${resultClass}">${icon} ${message}`;
+      
+      if (data) {
+        html += `<br><br><strong>Data Preview:</strong><br>${JSON.stringify(data, null, 2).substring(0, 500)}...`;
+      }
+      
+      html += '</div>';
+      document.getElementById(elementId).innerHTML = html;
+    }
+
+    async function testZipCodes() {
+      const resultId = 'zip-result';
+      showLoading(resultId);
+      
+      try {
+        const url = INSITE_CLOUD_CONFIG.getUrl(INSITE_CLOUD_CONFIG.ZIP_CODES.USPS_CLEAN);
+        document.getElementById(resultId).innerHTML += 
+          `<div class="url-display">Loading from: ${url}</div>`;
+        
+        const data = await INSITE_CLOUD_CONFIG.loadGeoJson(INSITE_CLOUD_CONFIG.ZIP_CODES.USPS_CLEAN);
+        
+        const preview = {
+          type: data.type,
+          features: data.features?.length || 0,
+          firstFeature: data.features?.[0]?.properties || {}
+        };
+        
+        showResult(resultId, true, 
+          `Successfully loaded ${preview.features} ZIP code features!`, 
+          preview);
+      } catch (error) {
+        showResult(resultId, false, `Failed to load ZIP codes: ${error.message}`);
+      }
+    }
+
+    async function testGeorgiaZips() {
+      const resultId = 'zip-result';
+      showLoading(resultId);
+      
+      try {
+        const url = INSITE_CLOUD_CONFIG.getUrl(INSITE_CLOUD_CONFIG.ZIP_CODES.GEORGIA_ENRICHED);
+        document.getElementById(resultId).innerHTML += 
+          `<div class="url-display">Loading from: ${url}</div>`;
+        
+        const data = await INSITE_CLOUD_CONFIG.loadGeoJson(INSITE_CLOUD_CONFIG.ZIP_CODES.GEORGIA_ENRICHED);
+        
+        const preview = {
+          type: data.type,
+          features: data.features?.length || 0,
+          sampleProperties: data.features?.[0]?.properties ? Object.keys(data.features[0].properties) : []
+        };
+        
+        showResult(resultId, true, 
+          `Successfully loaded ${preview.features} Georgia ZIP features!`, 
+          preview);
+      } catch (error) {
+        showResult(resultId, false, `Failed to load Georgia ZIPs: ${error.message}`);
+      }
+    }
+
+    async function testAtlantaParks() {
+      const resultId = 'parks-result';
+      showLoading(resultId);
+      
+      try {
+        const url = INSITE_CLOUD_CONFIG.getUrl(INSITE_CLOUD_CONFIG.PARKS.ATLANTA);
+        document.getElementById(resultId).innerHTML += 
+          `<div class="url-display">Loading from: ${url}</div>`;
+        
+        const data = await INSITE_CLOUD_CONFIG.loadGeoJson(INSITE_CLOUD_CONFIG.PARKS.ATLANTA);
+        
+        const preview = {
+          parks: data.features?.length || 0,
+          firstPark: data.features?.[0]?.properties?.name || 'Unknown'
+        };
+        
+        showResult(resultId, true, 
+          `Successfully loaded ${preview.parks} Atlanta parks!`, 
+          preview);
+      } catch (error) {
+        showResult(resultId, false, `Failed to load parks: ${error.message}`);
+      }
+    }
+
+    async function testAllParks() {
+      const resultId = 'parks-result';
+      showLoading(resultId);
+      
+      try {
+        const parkFiles = Object.values(INSITE_CLOUD_CONFIG.PARKS);
+        const results = await Promise.all(
+          parkFiles.slice(0, 3).map(path => INSITE_CLOUD_CONFIG.loadGeoJson(path))
+        );
+        
+        const totalParks = results.reduce((sum, data) => sum + (data.features?.length || 0), 0);
+        
+        showResult(resultId, true, 
+          `Successfully loaded ${results.length} park datasets with ${totalParks} total parks!`);
+      } catch (error) {
+        showResult(resultId, false, `Failed to load parks: ${error.message}`);
+      }
+    }
+
+    async function testMartaRoutes() {
+      const resultId = 'transit-result';
+      showLoading(resultId);
+      
+      try {
+        const url = INSITE_CLOUD_CONFIG.getUrl(INSITE_CLOUD_CONFIG.TRANSIT.MARTA_ROUTES);
+        document.getElementById(resultId).innerHTML += 
+          `<div class="url-display">Loading from: ${url}</div>`;
+        
+        const data = await INSITE_CLOUD_CONFIG.loadGeoJson(INSITE_CLOUD_CONFIG.TRANSIT.MARTA_ROUTES);
+        
+        const preview = {
+          routes: data.features?.length || 0,
+          type: data.type
+        };
+        
+        showResult(resultId, true, 
+          `Successfully loaded ${preview.routes} MARTA routes!`, 
+          preview);
+      } catch (error) {
+        showResult(resultId, false, `Failed to load MARTA routes: ${error.message}`);
+      }
+    }
+
+    async function testMartaStops() {
+      const resultId = 'transit-result';
+      showLoading(resultId);
+      
+      try {
+        const url = INSITE_CLOUD_CONFIG.getUrl(INSITE_CLOUD_CONFIG.TRANSIT.MARTA_GTFS.STOPS);
+        document.getElementById(resultId).innerHTML += 
+          `<div class="url-display">Loading from: ${url}</div>`;
+        
+        const stops = await INSITE_CLOUD_CONFIG.loadGTFS(INSITE_CLOUD_CONFIG.TRANSIT.MARTA_GTFS.STOPS);
+        
+        const preview = {
+          totalStops: stops.length,
+          firstStop: stops[0]
+        };
+        
+        showResult(resultId, true, 
+          `Successfully loaded ${preview.totalStops} MARTA stops!`, 
+          preview);
+      } catch (error) {
+        showResult(resultId, false, `Failed to load MARTA stops: ${error.message}`);
+      }
+    }
+
+    async function testAll() {
+      const resultId = 'batch-result';
+      showLoading(resultId);
+      
+      try {
+        const tests = [
+          { name: 'USPS ZIPs', path: INSITE_CLOUD_CONFIG.ZIP_CODES.USPS_CLEAN, type: 'geojson' },
+          { name: 'Atlanta Parks', path: INSITE_CLOUD_CONFIG.PARKS.ATLANTA, type: 'geojson' },
+          { name: 'MARTA Routes', path: INSITE_CLOUD_CONFIG.TRANSIT.MARTA_ROUTES, type: 'geojson' },
+          { name: 'MARTA Stops', path: INSITE_CLOUD_CONFIG.TRANSIT.MARTA_GTFS.STOPS, type: 'gtfs' }
+        ];
+        
+        const results = [];
+        
+        for (const test of tests) {
+          try {
+            const data = test.type === 'gtfs' 
+              ? await INSITE_CLOUD_CONFIG.loadGTFS(test.path)
+              : await INSITE_CLOUD_CONFIG.loadGeoJson(test.path);
+            
+            results.push({
+              name: test.name,
+              success: true,
+              count: test.type === 'gtfs' ? data.length : (data.features?.length || 0)
+            });
+          } catch (error) {
+            results.push({
+              name: test.name,
+              success: false,
+              error: error.message
+            });
+          }
+        }
+        
+        const successCount = results.filter(r => r.success).length;
+        const message = `Tested ${tests.length} files: ${successCount} succeeded, ${tests.length - successCount} failed`;
+        
+        showResult(resultId, successCount === tests.length, message, results);
+      } catch (error) {
+        showResult(resultId, false, `Batch test failed: ${error.message}`);
+      }
+    }
+
+    // Auto-run info display
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('🌐 Google Cloud Storage Test Page Loaded');
+      console.log('📦 Base URL:', INSITE_CLOUD_CONFIG.BASE_URL);
+      console.log('✅ Cloud config loaded successfully!');
+    });
+  </script>
+</body>
+</html>

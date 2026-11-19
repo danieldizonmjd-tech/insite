@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Config Test</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #0a0e1a;
+      color: #f9fafb;
+    }
+    .test {
+      margin: 20px 0;
+      padding: 15px;
+      background: #1a1f2e;
+      border-radius: 8px;
+      border-left: 4px solid #6366f1;
+    }
+    .success { border-left-color: #10b981; }
+    .error { border-left-color: #ef4444; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Config Test</h1>
+  
+  <div class="test" id="test1">
+    <h3>Test 1: API Config Loaded</h3>
+    <div id="result1">Testing...</div>
+  </div>
+  
+  <div class="test" id="test2">
+    <h3>Test 2: AWS Config Loaded</h3>
+    <div id="result2">Testing...</div>
+  </div>
+  
+  <div class="test" id="test3">
+    <h3>Test 3: API Key Endpoint</h3>
+    <div id="result3">Testing...</div>
+  </div>
+  
+  <div class="test" id="test4">
+    <h3>Test 4: Fetch API Key</h3>
+    <div id="result4">Testing...</div>
+  </div>
+
+  <script src="api-config.js"></script>
+  <script src="aws-s3-config.js"></script>
+  
+  <script>
+    // Test 1: Check if API_CONFIG is defined
+    const test1 = document.getElementById('test1');
+    const result1 = document.getElementById('result1');
+    if (typeof API_CONFIG !== 'undefined') {
+      test1.classList.add('success');
+      result1.innerHTML = `✅ API_CONFIG is defined<br>
+        - isProduction: ${API_CONFIG.isProduction}<br>
+        - baseURL: ${API_CONFIG.baseURL}`;
+    } else {
+      test1.classList.add('error');
+      result1.innerHTML = '❌ API_CONFIG is NOT defined';
+    }
+    
+    // Test 2: Check if INSITE_S3_CONFIG is defined
+    const test2 = document.getElementById('test2');
+    const result2 = document.getElementById('result2');
+    if (typeof INSITE_S3_CONFIG !== 'undefined') {
+      test2.classList.add('success');
+      result2.innerHTML = `✅ INSITE_S3_CONFIG is defined<br>
+        - BASE_URL: ${INSITE_S3_CONFIG.BASE_URL}`;
+    } else {
+      test2.classList.add('error');
+      result2.innerHTML = '❌ INSITE_S3_CONFIG is NOT defined';
+    }
+    
+    // Test 3: Check API key endpoint
+    const test3 = document.getElementById('test3');
+    const result3 = document.getElementById('result3');
+    if (typeof API_CONFIG !== 'undefined' && API_CONFIG.apiKeyEndpoint) {
+      test3.classList.add('success');
+      result3.innerHTML = `✅ API Key Endpoint: ${API_CONFIG.apiKeyEndpoint}`;
+    } else {
+      test3.classList.add('error');
+      result3.innerHTML = '❌ API Key Endpoint not available';
+    }
+    
+    // Test 4: Try to fetch API key
+    const test4 = document.getElementById('test4');
+    const result4 = document.getElementById('result4');
+    
+    async function testFetchAPIKey() {
+      try {
+        const response = await fetch(API_CONFIG.apiKeyEndpoint);
+        const data = await response.json();
+        
+        if (data.api_key) {
+          test4.classList.add('success');
+          result4.innerHTML = `✅ API Key fetched successfully<br>
+            - Key length: ${data.api_key.length} characters<br>
+            - Key starts with: ${data.api_key.substring(0, 10)}...`;
+        } else {
+          test4.classList.add('error');
+          result4.innerHTML = `❌ API Key not found in response<br>
+            - Response: ${JSON.stringify(data)}`;
+        }
+      } catch (error) {
+        test4.classList.add('error');
+        result4.innerHTML = `❌ Error fetching API key: ${error.message}`;
+      }
+    }
+    
+    testFetchAPIKey();
+  </script>
+</body>
+</html>

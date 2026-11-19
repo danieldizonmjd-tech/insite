@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Config Test</title>
+  <script src="api-config.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #0f172a;
+      color: white;
+    }
+    .result {
+      margin: 20px 0;
+      padding: 15px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.1);
+    }
+    .success { border-left: 4px solid #10b981; }
+    .error { border-left: 4px solid #ef4444; }
+    button {
+      background: #6366f1;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 5px;
+    }
+    button:hover { background: #4f46e5; }
+    pre {
+      background: #1e293b;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔐 API Configuration Test</h1>
+  
+  <div class="result">
+    <h3>Environment Detection:</h3>
+    <p><strong>Hostname:</strong> <span id="hostname"></span></p>
+    <p><strong>Environment:</strong> <span id="environment"></span></p>
+    <p><strong>Base URL:</strong> <span id="baseUrl"></span></p>
+    <p><strong>API Endpoint:</strong> <span id="apiEndpoint"></span></p>
+  </div>
+
+  <button onclick="testConfig()">1. Test Configuration</button>
+  <button onclick="testEndpoint()">2. Test Endpoint</button>
+  <button onclick="testAPIKey()">3. Fetch API Key</button>
+  <button onclick="testGoogleMaps()">4. Load Google Maps</button>
+
+  <div id="results"></div>
+
+  <div id="map" style="height: 400px; margin-top: 20px; border-radius: 8px; display: none; background: #1e293b;"></div>
+
+  <script>
+    // Display config on load
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('hostname').textContent = window.location.hostname;
+      document.getElementById('environment').textContent = API_CONFIG.isProduction ? 'Production' : 'Development';
+      document.getElementById('baseUrl').textContent = API_CONFIG.baseURL;
+      document.getElementById('apiEndpoint').textContent = API_CONFIG.apiKeyEndpoint;
+    });
+
+    function addResult(message, type = 'success') {
+      const results = document.getElementById('results');
+      const div = document.createElement('div');
+      div.className = `result ${type}`;
+      div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong><br>${message}`;
+      results.appendChild(div);
+      results.scrollTop = results.scrollHeight;
+    }
+
+    function testConfig() {
+      addResult(`
+        <strong>✅ Configuration Loaded</strong><br>
+        Environment: ${API_CONFIG.isProduction ? 'Production' : 'Development'}<br>
+        Base URL: ${API_CONFIG.baseURL}<br>
+        API Endpoint: ${API_CONFIG.apiKeyEndpoint}
+      `, 'success');
+    }
+
+    async function testEndpoint() {
+      try {
+        const url = API_CONFIG.apiKeyEndpoint + '?key=test';
+        addResult(`Testing endpoint: ${url}`, 'success');
+        
+        const response = await fetch(url);
+        addResult(`Status: ${response.status} ${response.statusText}`, 
+          response.ok || response.status === 404 ? 'success' : 'error');
+        
+        const data = await response.json();
+        addResult(`Response: <pre>${JSON.stringify(data, null, 2)}</pre>`, 
+          data.error === 'key_not_found' ? 'success' : 'error');
+          
+      } catch (err) {
+        addResult(`❌ Error: ${err.message}`, 'error');
+      }
+    }
+
+    async function testAPIKey() {
+      try {
+        addResult('Fetching Google Maps API key...', 'success');
+        const apiKey = await getAPIKey('google_maps');
+        addResult(`✅ API Key Retrieved!<br>Length: ${apiKey.length} characters<br>Starts with: ${apiKey.substring(0, 10)}...`, 'success');
+      } catch (err) {
+        addResult(`❌ Failed: ${err.message}`, 'error');
+      }
+    }
+
+    async function testGoogleMaps() {
+      try {
+        addResult('Loading Google Maps...', 'success');
+        const apiKey = await getAPIKey('google_maps');
+        
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&callback=initMap`;
+        script.async = true;
+        script.defer = true;
+        
+        script.onerror = () => {
+          addResult('❌ Failed to load Google Maps script', 'error');
+        };
+        
+        document.head.appendChild(script);
+        addResult('Google Maps script added to page', 'success');
+        
+      } catch (err) {
+        addResult(`❌ Failed: ${err.message}`, 'error');
+      }
+    }
+
+    window.initMap = function() {
+      addResult('✅ Google Maps loaded successfully!', 'success');
+      
+      const mapDiv = document.getElementById('map');
+      mapDiv.style.display = 'block';
+      
+      const map = new google.maps.Map(mapDiv, {
+        center: { lat: 33.7490, lng: -84.3880 },
+        zoom: 11
+      });
+      
+      new google.maps.Marker({
+        position: { lat: 33.7490, lng: -84.3880 },
+        map: map,
+        title: 'Atlanta, GA'
+      });
+      
+      addResult('✅ Map displayed with marker!<br><strong>All tests passed! 🎉</strong>', 'success');
+    };
+
+    window.gm_authFailure = function() {
+      addResult('❌ Google Maps authentication failed - API key is invalid or restricted', 'error');
+    };
+  </script>
+</body>
+</html>

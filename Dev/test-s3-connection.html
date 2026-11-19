@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWS S3 Data Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+      padding: 2rem;
+      line-height: 1.6;
+    }
+    .test-card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      border-left: 4px solid #666;
+    }
+    .test-card.success { border-left-color: #10b981; }
+    .test-card.error { border-left-color: #ef4444; }
+    .test-card.loading { border-left-color: #f59e0b; }
+    h1 { color: #F5F5DC; }
+    h2 { margin: 0 0 0.5rem 0; }
+    pre {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    button {
+      background: linear-gradient(135deg, #F5F5DC, #FFFDD0);
+      color: #2C2C2C;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    button:hover { transform: translateY(-2px); }
+    code { background: rgba(0,0,0,0.3); padding: 0.2rem 0.5rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>🔍 AWS S3 Data Connection Test</h1>
+  
+  <p><strong>Server:</strong> <code id="serverInfo"></code></p>
+  
+  <div class="test-card loading" id="configTest">
+    <h2>Test 1: INSITE_S3_CONFIG Loaded</h2>
+    <div id="configResult">Checking...</div>
+  </div>
+  
+  <div class="test-card loading" id="urlTest">
+    <h2>Test 2: S3 URL Construction</h2>
+    <div id="urlResult">Checking...</div>
+  </div>
+  
+  <div class="test-card loading" id="fetchTest">
+    <h2>Test 3: Fetch from S3</h2>
+    <div id="fetchResult">Checking...</div>
+  </div>
+  
+  <div class="test-card loading" id="dataTest">
+    <h2>Test 4: Data Parsing</h2>
+    <div id="dataResult">Checking...</div>
+  </div>
+  
+  <button onclick="runTests()">🔄 Run Tests Again</button>
+  <button onclick="testLocalFallback()">📁 Test Local Fallback</button>
+  
+  <div class="test-card" id="previewCard" style="display: none;">
+    <h2>Data Preview</h2>
+    <pre id="dataPreview"></pre>
+  </div>
+
+  <script src="aws-s3-config.js"></script>
+  <script>
+    document.getElementById('serverInfo').textContent = window.location.origin;
+    
+    async function runTests() {
+      // Reset all tests
+      document.querySelectorAll('.test-card').forEach(card => {
+        card.className = 'test-card loading';
+      });
+      document.getElementById('previewCard').style.display = 'none';
+      
+      let allPassed = true;
+      
+      // Test 1: Config loaded
+      const configCard = document.getElementById('configTest');
+      const configResult = document.getElementById('configResult');
+      
+      if (typeof INSITE_S3_CONFIG !== 'undefined') {
+        configCard.className = 'test-card success';
+        configResult.innerHTML = `
+          <p>✅ <code>INSITE_S3_CONFIG</code> is defined</p>
+          <p>Base URL: <code>${INSITE_S3_CONFIG.BASE_URL}</code></p>
+          <p>ZIP_CODES defined: <code>${typeof INSITE_S3_CONFIG.ZIP_CODES !== 'undefined'}</code></p>
+          <p>loadGeoJson method: <code>${typeof INSITE_S3_CONFIG.loadGeoJson === 'function'}</code></p>
+        `;
+      } else {
+        configCard.className = 'test-card error';
+        configResult.innerHTML = `<p>❌ <code>INSITE_S3_CONFIG</code> is NOT defined!</p>
+          <p>Make sure <code>aws-s3-config.js</code> is loaded before this script.</p>`;
+        allPassed = false;
+        return; // Can't continue without config
+      }
+      
+      // Test 2: URL construction
+      const urlCard = document.getElementById('urlTest');
+      const urlResult = document.getElementById('urlResult');
+      
+      try {
+        const testUrl = INSITE_S3_CONFIG.getUrl(INSITE_S3_CONFIG.ZIP_CODES.USPS_CLEAN);
+        urlCard.className = 'test-card success';
+        urlResult.innerHTML = `
+          <p>✅ URL constructed successfully</p>
+          <p>Full URL: <code>${testUrl}</code></p>
+        `;
+      } catch (err) {
+        urlCard.className = 'test-card error';
+        urlResult.innerHTML = `<p>❌ Error constructing URL: ${err.message}</p>`;
+        allPassed = false;
+      }
+      
+      // Test 3: Fetch from S3
+      const fetchCard = document.getElementById('fetchTest');
+      const fetchResult = document.getElementById('fetchResult');
+      
+      try {
+        const url = INSITE_S3_CONFIG.getUrl(INSITE_S3_CONFIG.ZIP_CODES.USPS_CLEAN);
+        fetchResult.innerHTML = `<p>⏳ Fetching from: <code>${url}</code></p>`;
+        
+        const startTime = Date.now();
+        const response = await fetch(url);
+        const elapsed = Date.now() - startTime;
+        
+        if (response.ok) {
+          fetchCard.className = 'test-card success';
+          fetchResult.innerHTML = `
+            <p>✅ Fetch successful!</p>
+            <p>Status: <code>${response.status} ${response.statusText}</code></p>
+            <p>Content-Type: <code>${response.headers.get('content-type')}</code></p>
+            <p>Time: <code>${elapsed}ms</code></p>
+          `;
+          
+          // Test 4: Parse data
+          const dataCard = document.getElementById('dataTest');
+          const dataResult = document.getElementById('dataResult');
+          
+          try {
+            const data = await response.json();
+            
+            if (data && data.features && Array.isArray(data.features)) {
+              dataCard.className = 'test-card success';
+              dataResult.innerHTML = `
+                <p>✅ GeoJSON parsed successfully!</p>
+                <p>Type: <code>${data.type}</code></p>
+                <p>Features: <code>${data.features.length}</code></p>
+                <p>Sample ZIP: <code>${data.features[0]?.properties?.NAME || 'N/A'}</code></p>
+              `;
+              
+              // Show preview
+              document.getElementById('previewCard').style.display = 'block';
+              document.getElementById('dataPreview').textContent = JSON.stringify(data.features.slice(0, 3), null, 2);
+            } else {
+              dataCard.className = 'test-card error';
+              dataResult.innerHTML = `<p>❌ Data doesn't look like GeoJSON</p>
+                <pre>${JSON.stringify(data, null, 2).slice(0, 500)}</pre>`;
+              allPassed = false;
+            }
+          } catch (parseErr) {
+            dataCard.className = 'test-card error';
+            dataResult.innerHTML = `<p>❌ Failed to parse JSON: ${parseErr.message}</p>`;
+            allPassed = false;
+          }
+        } else {
+          fetchCard.className = 'test-card error';
+          fetchResult.innerHTML = `
+            <p>❌ Fetch failed!</p>
+            <p>Status: <code>${response.status} ${response.statusText}</code></p>
+            <p>This could be a CORS issue. Check browser console for details.</p>
+          `;
+          allPassed = false;
+          
+          // Mark data test as failed too
+          const dataCard = document.getElementById('dataTest');
+          dataCard.className = 'test-card error';
+          document.getElementById('dataResult').innerHTML = '<p>❌ Cannot test - fetch failed</p>';
+        }
+      } catch (err) {
+        fetchCard.className = 'test-card error';
+        fetchResult.innerHTML = `
+          <p>❌ Network error: ${err.message}</p>
+          <p>Check browser console for CORS or network errors.</p>
+          <p>Possible causes:</p>
+          <ul>
+            <li>CORS not configured on S3 bucket</li>
+            <li>S3 bucket doesn't exist</li>
+            <li>File doesn't exist</li>
+            <li>Network issue</li>
+          </ul>
+        `;
+        allPassed = false;
+        
+        // Mark data test as failed too
+        const dataCard = document.getElementById('dataTest');
+        dataCard.className = 'test-card error';
+        document.getElementById('dataResult').innerHTML = '<p>❌ Cannot test - fetch failed</p>';
+      }
+      
+      if (allPassed) {
+        console.log('✅ All S3 tests passed!');
+      }
+    }
+    
+    async function testLocalFallback() {
+      const fetchCard = document.getElementById('fetchTest');
+      const fetchResult = document.getElementById('fetchResult');
+      fetchCard.className = 'test-card loading';
+      
+      try {
+        fetchResult.innerHTML = '<p>⏳ Testing local fallback file...</p>';
+        const response = await fetch('USPS_Zip_Codes_enriched.geojson');
+        
+        if (response.ok) {
+          const data = await response.json();
+          fetchCard.className = 'test-card success';
+          fetchResult.innerHTML = `
+            <p>✅ Local fallback file exists!</p>
+            <p>Features: <code>${data.features?.length || 'N/A'}</code></p>
+            <p>This can be used if S3 fails.</p>
+          `;
+        } else {
+          fetchCard.className = 'test-card error';
+          fetchResult.innerHTML = `<p>❌ Local fallback file not found (${response.status})</p>`;
+        }
+      } catch (err) {
+        fetchCard.className = 'test-card error';
+        fetchResult.innerHTML = `<p>❌ Error loading local file: ${err.message}</p>`;
+      }
+    }
+    
+    // Run tests on load
+    runTests();
+  </script>
+</body>
+</html>

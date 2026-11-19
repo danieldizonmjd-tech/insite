@@ -1,0 +1,17 @@
+<!-- Minimalist Insite App Icon - Diagonal Serif I, Light Blue & White, Sharp Edges, 45 Degree Angle, 1.5x Larger -->
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background: white -->
+  <rect width="512" height="512" rx="110" fill="#fff"/>
+  
+  <!-- Diagonal I with longer perpendicular serifs, 45 degree angle, 1.5x larger -->
+  <g transform="rotate(-45 256 256) scale(1.5) translate(-85,-85)">
+    <!-- Main I bar (sharp edges) -->
+    <rect x="236" y="116" width="40" height="280" fill="#4facfe"/>
+    <!-- Top serif: perpendicular, centered, longer -->
+    <rect x="196" y="116" width="120" height="40" fill="#4facfe"/>
+    <!-- Bottom serif: perpendicular, centered, longer -->
+    <rect x="196" y="356" width="120" height="40" fill="#4facfe"/>
+    <!-- White break in the middle -->
+    <rect x="236" y="236" width="40" height="40" fill="#fff"/>
+  </g>
+</svg>

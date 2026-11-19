@@ -1,0 +1,66 @@
+# Node modules
+node_modules/
+
+# Build outputs
+android/app/build/
+android/build/
+android/.gradle/
+android/.idea/
+android/local.properties
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Sensitive files
+android/key.properties
+*.keystore
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
+
+# Temporary files
+*.tmp
+*.bak
+
+# Large data files (exceed GitHub limits)
+property_value_by_zipcode.csv
+neighborhood_zhvi_allhomes.csv
+georgia_zipcodes_enriched.geojson
+georgia_zipcodes_with_city.geojson
+georgia_zipcodes.geojson
+USPS_Zip_Codes.geojson
+
+# API keys and environment files
+dev-keys.js
+access_api_keys.php
+access_api_keys.*.php
+config.php
+db_login.php
+db-config.php
+.env
+.env.local
+.env.production
+database.ini
+api-keys.json
+keys.json
+*_backup.sql
+*.sql
+local-config.php
+
+# Claude Code temp files
+tmpclaude-*

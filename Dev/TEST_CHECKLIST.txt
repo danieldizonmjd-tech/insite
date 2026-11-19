@@ -1,0 +1,176 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                    🧪 TESTING CHECKLIST 🧪                                ║
+║                   December 29, 2024                                       ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  QUICK START                                                            ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+  cd /Users/ilyessmoudden/Documents/Insite/Map
+  php -S localhost:8000
+  
+  Then open: http://localhost:8000/insite_main.html
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  VISUAL TESTS (macOS)                                                   ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+  □ Export button shows [⌘+E] badge
+  □ Help button shows [?] badge
+  □ Tab buttons show [⌥+1], [⌥+2], [⌥+3], [⌥+4], [⌥+5]
+  □ Hover over Export → Tooltip appears above button
+  □ Hover over Export → Tooltip says "Export data (Cmd+E)"
+  □ Metro selection page shows on first visit
+  □ Atlanta card has pulsing green "Available Now" badge
+  □ Coming Soon cards have gray overlay
+  □ All buttons have glass morphism styling
+  □ Buttons lift on hover (-2px to -8px)
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  KEYBOARD SHORTCUTS (macOS)                                             ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+  □ Press ⌘+E → JSON file downloads
+  □ Press ⌥+1 → Switches to Explore tab
+  □ Press ⌥+2 → Switches to Compare tab
+  □ Press ⌥+3 → Switches to Lifestyle tab
+  □ Press ⌥+4 → Switches to Analytics tab
+  □ Press ⌥+5 → Switches to Map tab
+  □ Press ? → Help modal opens
+  □ Press Escape in help modal → Modal closes
+  □ Click outside help modal → Modal closes
+  □ Press Enter in search box → Searches
+  □ Press Escape in search box → Clears input
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  HELP MODAL (macOS)                                                     ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+  □ Help modal shows "Tab Navigation" section
+  □ Tab shortcuts show "Option+1" through "Option+5"
+  □ Help modal shows "Search & Actions" section
+  □ Export shortcut shows "Cmd+E"
+  □ Help modal shows "Tips & Features" section
+  □ Platform detection shows "You're using macOS"
+  □ All keyboard badges have proper styling
+  □ Modal has glass morphism background
+  □ Close button has rotate animation on hover
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  EXPORT FUNCTIONALITY                                                   ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+  □ On Explore tab: Search for ZIP, then ⌘+E
+     → Downloads: insite_explore_30301_2024-12-29.json
+  □ On Compare tab: Add ZIPs, then ⌘+E
+     → Downloads: insite_compare_2024-12-29.json
+  □ On Analytics tab: Select metric, then ⌘+E
+     → Downloads: insite_analytics_avg_value_2024-12-29.json
+  □ Each export shows success toast
+  □ JSON files are properly formatted
+  □ JSON includes timestamp
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  METRO SELECTION                                                        ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+  □ Metro selection shows on first visit
+  □ Atlanta card is clickable
+  □ Hover Atlanta card → Lifts -8px with image zoom
+  □ "Available Now" badge pulses (2s cycle)
+  □ Green dot blinks (1.5s cycle)
+  □ Click Atlanta → Landing page hides
+  □ Refresh page → Landing page stays hidden
+  □ Clear localStorage → Landing page reappears
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  CONSOLE TESTS                                                          ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+  Open DevTools (⌘+Option+I), check Console:
+  
+  □ "Transit and Parks helpers initialized"
+  □ "Platform detected: macOS"
+  □ No JavaScript errors
+  □ No 404 errors
+  □ No CORS errors
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  RESPONSIVE DESIGN                                                      ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+  Open DevTools → Toggle device toolbar (⌘+Shift+M)
+  
+  □ Mobile: Toolbar buttons stack vertically
+  □ Mobile: Keyboard hints hide
+  □ Mobile: Touch targets are 44px minimum
+  □ Tablet: 2-column grid for metro cards
+  □ Desktop: Multi-column grid for metro cards
+  □ All breakpoints look good
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  ANIMATIONS                                                             ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+  □ Buttons lift on hover (smooth transition)
+  □ Buttons have shimmer effect on hover
+  □ Metro cards slide in on page load
+  □ Metro cards lift on hover
+  □ Help modal slides up on open
+  □ Help modal fades out on close
+  □ Tooltips slide up smoothly
+  □ "Available Now" badge pulses continuously
+  □ Green dot blinks continuously
+  □ All animations are smooth (60fps)
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  BROWSER COMPATIBILITY                                                  ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+  Test in different browsers:
+  
+  □ Safari (Mac native)
+  □ Chrome
+  □ Firefox
+  □ Edge (if available)
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  WINDOWS TESTING (If Available)                                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+  On Windows machine:
+  
+  □ Export button shows [Ctrl+E]
+  □ Tab buttons show [Alt+1] through [Alt+5]
+  □ Press Ctrl+E → Exports work
+  □ Press Alt+1-5 → Tab switching works
+  □ Help modal shows "Ctrl" and "Alt"
+  □ Platform detection shows "Windows/Linux"
+  □ Console logs "Platform detected: Windows/Linux"
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                      📊 TESTING SUMMARY                                   ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+  Total Tests: 60+
+  
+  Categories:
+    • Visual Tests: 10
+    • Keyboard Shortcuts: 11
+    • Help Modal: 9
+    • Export: 6
+    • Metro Selection: 7
+    • Console: 5
+    • Responsive: 6
+    • Animations: 10
+    • Browser Compatibility: 4
+    • Windows: 8
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                    ✅ READY FOR TESTING ✅                                ║
+║                                                                           ║
+║  Start the PHP server and work through this checklist systematically.    ║
+║  Report any issues or unexpected behavior for quick fixes!                ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+

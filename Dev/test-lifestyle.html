@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lifestyle Tab Test - InSite</title>
+  <link rel="stylesheet" href="insite-modern.css?v=18">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      padding: 2rem;
+      background: var(--bg-primary);
+    }
+    .test-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .test-header {
+      background: var(--gradient-cream);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    .test-info {
+      background: rgba(255, 253, 208, 0.1);
+      border: 1px solid var(--border-cream);
+      border-radius: var(--radius-lg);
+      padding: 1rem;
+      margin-bottom: 2rem;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h1 class="test-header">Lifestyle Tab Test</h1>
+    
+    <div class="test-info">
+      <strong>Test Status:</strong> <span id="testStatus">Initializing...</span><br>
+      <strong>ZIP Codes Loaded:</strong> <span id="zipCount">0</span><br>
+      <strong>AWS S3 Connection:</strong> <span id="s3Status">Checking...</span>
+    </div>
+
+    <!-- Lifestyle UI -->
+    <div class="container">
+      <div class="page-header">
+        <h1 class="page-title">Find Your Perfect Neighborhood</h1>
+        <p class="page-subtitle">Discover neighborhoods that match your lifestyle preferences with smart scoring</p>
+      </div>
+
+      <!-- Lifestyle Preference Filter -->
+      <div class="glass-card lifestyle-filter-card">
+        <h3 style="color: var(--cream); margin-bottom: 1rem; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fas fa-sliders-h"></i> What Matters Most to You?
+        </h3>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem;">
+          Select your priorities and adjust minimum scores:
+        </p>
+        
+        <div class="lifestyle-preferences-grid">
+          <!-- Affordability -->
+          <div class="lifestyle-pref-card">
+            <div class="pref-header">
+              <input type="checkbox" id="pref-affordability" class="pref-checkbox" checked onchange="updateLifestyleMatches()">
+              <label for="pref-affordability" class="pref-title">
+                <i class="fas fa-tag"></i>
+                <span>Affordability</span>
+              </label>
+              <span class="pref-weight">25%</span>
+            </div>
+            <div class="pref-slider-container">
+              <input type="range" id="weight-affordability" min="0" max="100" value="60" class="pref-slider" oninput="updateLifestyleMatches()">
+              <div class="slider-labels">
+                <span>Min Score:</span>
+                <span class="slider-value" id="val-affordability">60</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Safety -->
+          <div class="lifestyle-pref-card">
+            <div class="pref-header">
+              <input type="checkbox" id="pref-safety" class="pref-checkbox" checked onchange="updateLifestyleMatches()">
+              <label for="pref-safety" class="pref-title">
+                <i class="fas fa-shield-alt"></i>
+                <span>Safety</span>
+              </label>
+              <span class="pref-weight">25%</span>
+            </div>
+            <div class="pref-slider-container">
+              <input type="range" id="weight-safety" min="0" max="100" value="70" class="pref-slider" oninput="updateLifestyleMatches()">
+              <div class="slider-labels">
+                <span>Min Score:</span>
+                <span class="slider-value" id="val-safety">70</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Income -->
+          <div class="lifestyle-pref-card">
+            <div class="pref-header">
+              <input type="checkbox" id="pref-income" class="pref-checkbox" onchange="updateLifestyleMatches()">
+              <label for="pref-income" class="pref-title">
+                <i class="fas fa-wallet"></i>
+                <span>Income Level</span>
+              </label>
+              <span class="pref-weight">20%</span>
+            </div>
+            <div class="pref-slider-container">
+              <input type="range" id="weight-income" min="0" max="100" value="50" class="pref-slider" oninput="updateLifestyleMatches()">
+              <div class="slider-labels">
+                <span>Min Score:</span>
+                <span class="slider-value" id="val-income">50</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Occupancy -->
+          <div class="lifestyle-pref-card">
+            <div class="pref-header">
+              <input type="checkbox" id="pref-occupancy" class="pref-checkbox" onchange="updateLifestyleMatches()">
+              <label for="pref-occupancy" class="pref-title">
+                <i class="fas fa-building"></i>
+                <span>Occupancy</span>
+              </label>
+              <span class="pref-weight">15%</span>
+            </div>
+            <div class="pref-slider-container">
+              <input type="range" id="weight-occupancy" min="0" max="100" value="80" class="pref-slider" oninput="updateLifestyleMatches()">
+              <div class="slider-labels">
+                <span>Min Score:</span>
+                <span class="slider-value" id="val-occupancy">80</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Investment -->
+          <div class="lifestyle-pref-card">
+            <div class="pref-header">
+              <input type="checkbox" id="pref-investment" class="pref-checkbox" onchange="updateLifestyleMatches()">
+              <label for="pref-investment" class="pref-title">
+                <i class="fas fa-chart-line"></i>
+                <span>Investment</span>
+              </label>
+              <span class="pref-weight">15%</span>
+            </div>
+            <div class="pref-slider-container">
+              <input type="range" id="weight-investment" min="0" max="100" value="60" class="pref-slider" oninput="updateLifestyleMatches()">
+              <div class="slider-labels">
+                <span>Min Score:</span>
+                <span class="slider-value" id="val-investment">60</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="glass-btn" style="width: 100%; margin-top: 1.5rem;" onclick="findLifestyleMatches()">
+          <i class="fas fa-search"></i> Find Matching Neighborhoods
+        </button>
+      </div>
+
+      <!-- Results -->
+      <div id="lifestyleResults" style="display: none;">
+        <div class="glass-card">
+          <h3 style="color: var(--cream); margin-bottom: 1rem; font-size: 1.1rem; display: flex; align-items: center; justify-content: space-between;">
+            <span><i class="fas fa-star"></i> Your Top Matches</span>
+            <span id="matchCount" style="font-size: 0.9rem; color: var(--text-muted);"></span>
+          </h3>
+          <div id="lifestyleMatchesGrid" class="lifestyle-matches-grid"></div>
+        </div>
+      </div>
+
+      <!-- Quick Presets -->
+      <div class="glass-card">
+        <h3 style="color: var(--emerald); margin-bottom: 1rem; font-size: 1.1rem;">
+          <i class="fas fa-magic"></i> Quick Lifestyle Presets
+        </h3>
+        <div class="lifestyle-presets-grid">
+          <button class="preset-card" onclick="applyLifestylePreset('family')">
+            <i class="fas fa-users"></i>
+            <span class="preset-title">Family-Friendly</span>
+            <span class="preset-desc">Safe, affordable</span>
+          </button>
+          <button class="preset-card" onclick="applyLifestylePreset('young-prof')">
+            <i class="fas fa-briefcase"></i>
+            <span class="preset-title">Young Professional</span>
+            <span class="preset-desc">Urban, vibrant</span>
+          </button>
+          <button class="preset-card" onclick="applyLifestylePreset('retiree')">
+            <i class="fas fa-umbrella-beach"></i>
+            <span class="preset-title">Retiree</span>
+            <span class="preset-desc">Quiet, safe</span>
+          </button>
+          <button class="preset-card" onclick="applyLifestylePreset('investor')">
+            <i class="fas fa-chart-line"></i>
+            <span class="preset-title">Investor</span>
+            <span class="preset-desc">High growth</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load AWS S3 Config -->
+  <script src="aws-s3-config.js"></script>
+  
+  <script>
+    let zipData = {};
+    let allZipCodes = [];
+
+    // Test AWS S3 connection
+    async function testS3Connection() {
+      try {
+        document.getElementById('s3Status').textContent = 'Connecting...';
+        document.getElementById('s3Status').style.color = '#f59e0b';
+        
+        const geoData = await INSITE_S3_CONFIG.loadGeoJson(INSITE_S3_CONFIG.ZIP_CODES.USPS_CLEAN);
+        
+        document.getElementById('s3Status').textContent = 'Connected ✓';
+        document.getElementById('s3Status').style.color = '#10b981';
+        
+        processGeoData(geoData);
+        
+        document.getElementById('testStatus').textContent = 'Ready! Click "Find Matching Neighborhoods" to test.';
+        document.getElementById('testStatus').style.color = '#10b981';
+      } catch (error) {
+        console.error('S3 connection failed:', error);
+        document.getElementById('s3Status').textContent = 'Failed ✗';
+        document.getElementById('s3Status').style.color = '#ef4444';
+        document.getElementById('testStatus').textContent = 'Error: ' + error.message;
+        document.getElementById('testStatus').style.color = '#ef4444';
+      }
+    }
+
+    function processGeoData(geoData) {
+      zipData = {};
+      allZipCodes = [];
+      
+      geoData.features.forEach(f => {
+        const zip = f.properties.NAME || f.properties.zip || f.properties.ZCTA5CE10;
+        if (zip) {
+          let cityName = f.properties.city || f.properties.CITY || "Atlanta Metro";
+          if (typeof cityName === 'number' || /^\d+$/.test(cityName)) {
+            cityName = "Atlanta Metro";
+          }
+          
+          zipData[zip] = {
+            zip: zip,
+            avg_value: f.properties.avg_value || f.properties.median_home_value || 0,
+            population: f.properties.population || f.properties.total_population || 0,
+            median_income: f.properties.median_income || f.properties.median_household_income || 0,
+            crime_rate: f.properties.crime_rate || 0,
+            housing_vacancy_rate: f.properties.housing_vacancy_rate || f.properties.vacancy_rate || 0,
+            city: cityName
+          };
+          allZipCodes.push(zip);
+        }
+      });
+
+      document.getElementById('zipCount').textContent = allZipCodes.length;
+      console.log(`Loaded ${allZipCodes.length} ZIP codes`);
+    }
+
+    // Lifestyle matching functions
+    function updateLifestyleMatches() {
+      ['affordability', 'safety', 'income', 'occupancy', 'investment'].forEach(pref => {
+        const slider = document.getElementById(`weight-${pref}`);
+        const valueDisplay = document.getElementById(`val-${pref}`);
+        if (slider && valueDisplay) {
+          valueDisplay.textContent = slider.value;
+        }
+      });
+    }
+
+    function calculateZipScores(zipCode) {
+      const data = zipData[zipCode];
+      if (!data) return null;
+
+      const getPercentileScore = (value, metric, higherIsBetter = true) => {
+        const allValues = allZipCodes.map(z => zipData[z][metric]).filter(v => v != null && v > 0).sort((a, b) => a - b);
+        if (allValues.length === 0) return 50;
+        const rank = allValues.filter(v => v <= value).length;
+        const percentile = Math.round((rank / allValues.length) * 100);
+        return higherIsBetter ? percentile : (100 - percentile);
+      };
+
+      return {
+        affordability: Math.max(0, Math.min(100, getPercentileScore(data.avg_value, 'avg_value', false))),
+        income: Math.max(0, Math.min(100, getPercentileScore(data.median_income, 'median_income', true))),
+        safety: Math.max(0, Math.min(100, getPercentileScore(data.crime_rate, 'crime_rate', false))),
+        occupancy: Math.max(0, Math.min(100, Math.round(100 - (data.housing_vacancy_rate * 10)))),
+        investment: Math.max(0, Math.min(100, Math.round((getPercentileScore(data.avg_value, 'avg_value', true) * 0.5) + (getPercentileScore(data.population, 'population', true) * 0.3) + ((100 - Math.min(100, data.housing_vacancy_rate * 10)) * 0.2))))
+      };
+    }
+
+    function getGradeFromScore(score) {
+      if (score >= 90) return { letter: 'A', color: '#10b981', class: 'grade-a' };
+      if (score >= 80) return { letter: 'B', color: '#22c55e', class: 'grade-b' };
+      if (score >= 70) return { letter: 'C', color: '#f59e0b', class: 'grade-c' };
+      if (score >= 60) return { letter: 'D', color: '#f97316', class: 'grade-d' };
+      return { letter: 'F', color: '#ef4444', class: 'grade-f' };
+    }
+
+    function findLifestyleMatches() {
+      console.log('Finding matches...');
+      
+      const preferences = {
+        affordability: {
+          enabled: document.getElementById('pref-affordability').checked,
+          minScore: parseInt(document.getElementById('weight-affordability').value)
+        },
+        safety: {
+          enabled: document.getElementById('pref-safety').checked,
+          minScore: parseInt(document.getElementById('weight-safety').value)
+        },
+        income: {
+          enabled: document.getElementById('pref-income').checked,
+          minScore: parseInt(document.getElementById('weight-income').value)
+        },
+        occupancy: {
+          enabled: document.getElementById('pref-occupancy').checked,
+          minScore: parseInt(document.getElementById('weight-occupancy').value)
+        },
+        investment: {
+          enabled: document.getElementById('pref-investment').checked,
+          minScore: parseInt(document.getElementById('weight-investment').value)
+        }
+      };
+
+      console.log('Preferences:', preferences);
+
+      const matches = allZipCodes.filter(zipCode => {
+        const scores = calculateZipScores(zipCode);
+        if (!scores) return false;
+
+        for (const [pref, settings] of Object.entries(preferences)) {
+          if (settings.enabled && scores[pref] < settings.minScore) {
+            return false;
+          }
+        }
+        return true;
+      }).map(zipCode => {
+        const scores = calculateZipScores(zipCode);
+        const data = zipData[zipCode];
+        
+        const enabledScores = [];
+        for (const [pref, settings] of Object.entries(preferences)) {
+          if (settings.enabled) {
+            enabledScores.push(scores[pref]);
+          }
+        }
+        const overallScore = enabledScores.length > 0 
+          ? Math.round(enabledScores.reduce((a, b) => a + b, 0) / enabledScores.length)
+          : 0;
+
+        return { zipCode, data, scores, overallScore };
+      }).sort((a, b) => b.overallScore - a.overallScore).slice(0, 12);
+
+      console.log(`Found ${matches.length} matches`);
+
+      if (matches.length === 0) {
+        alert('No neighborhoods match your criteria. Try adjusting your preferences.');
+        document.getElementById('lifestyleResults').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('lifestyleResults').style.display = 'block';
+      document.getElementById('matchCount').textContent = `${matches.length} neighborhoods found`;
+
+      const matchesGrid = document.getElementById('lifestyleMatchesGrid');
+      matchesGrid.innerHTML = matches.map(match => {
+        const grade = getGradeFromScore(match.overallScore);
+        const formatCurrency = (val) => val >= 1000000 ? '$' + (val / 1000000).toFixed(1) + 'M' : '$' + Math.round(val / 1000) + 'K';
+        const formatPop = (pop) => pop >= 1000000 ? (pop / 1000000).toFixed(1) + 'M' : pop >= 1000 ? Math.round(pop / 1000) + 'K' : pop.toLocaleString();
+
+        return `
+          <div class="lifestyle-match-card">
+            <div class="match-card-header">
+              <div class="match-zip-info">
+                <div class="match-zip-code">${match.zipCode}</div>
+                <div class="match-city">${match.data.city || 'Atlanta'}</div>
+              </div>
+              <div class="match-overall-score">
+                <div class="match-score-circle" style="--score-color: ${grade.color}; --score-percent: ${match.overallScore}">
+                  <div class="match-score-number">${match.overallScore}</div>
+                  <div class="match-score-grade">${grade.letter}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="match-score-breakdown">
+              ${preferences.affordability.enabled ? `
+                <div class="match-score-item" data-active="true">
+                  <div class="match-score-label"><i class="fas fa-tag"></i> Afford</div>
+                  <div class="match-score-value" style="color: ${getGradeFromScore(match.scores.affordability).color}">${match.scores.affordability}</div>
+                </div>
+              ` : ''}
+              ${preferences.safety.enabled ? `
+                <div class="match-score-item" data-active="true">
+                  <div class="match-score-label"><i class="fas fa-shield-alt"></i> Safety</div>
+                  <div class="match-score-value" style="color: ${getGradeFromScore(match.scores.safety).color}">${match.scores.safety}</div>
+                </div>
+              ` : ''}
+              ${preferences.income.enabled ? `
+                <div class="match-score-item" data-active="true">
+                  <div class="match-score-label"><i class="fas fa-wallet"></i> Income</div>
+                  <div class="match-score-value" style="color: ${getGradeFromScore(match.scores.income).color}">${match.scores.income}</div>
+                </div>
+              ` : ''}
+              ${preferences.occupancy.enabled ? `
+                <div class="match-score-item" data-active="true">
+                  <div class="match-score-label"><i class="fas fa-building"></i> Occup</div>
+                  <div class="match-score-value" style="color: ${getGradeFromScore(match.scores.occupancy).color}">${match.scores.occupancy}</div>
+                </div>
+              ` : ''}
+              ${preferences.investment.enabled ? `
+                <div class="match-score-item" data-active="true">
+                  <div class="match-score-label"><i class="fas fa-chart-line"></i> Invest</div>
+                  <div class="match-score-value" style="color: ${getGradeFromScore(match.scores.investment).color}">${match.scores.investment}</div>
+                </div>
+              ` : ''}
+            </div>
+
+            <div class="match-quick-stats">
+              <div class="match-stat"><i class="fas fa-home"></i> ${formatCurrency(match.data.avg_value || 0)}</div>
+              <div class="match-stat"><i class="fas fa-users"></i> ${formatPop(match.data.population || 0)}</div>
+              <div class="match-stat"><i class="fas fa-dollar-sign"></i> ${formatCurrency(match.data.median_income || 0)}/yr</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      console.log('Matches displayed');
+    }
+
+    function applyLifestylePreset(presetType) {
+      const presets = {
+        'family': {
+          affordability: { enabled: true, value: 70 },
+          safety: { enabled: true, value: 80 },
+          income: { enabled: false, value: 50 },
+          occupancy: { enabled: true, value: 85 },
+          investment: { enabled: false, value: 50 }
+        },
+        'young-prof': {
+          affordability: { enabled: true, value: 60 },
+          safety: { enabled: true, value: 65 },
+          income: { enabled: true, value: 70 },
+          occupancy: { enabled: true, value: 90 },
+          investment: { enabled: true, value: 70 }
+        },
+        'retiree': {
+          affordability: { enabled: true, value: 80 },
+          safety: { enabled: true, value: 85 },
+          income: { enabled: false, value: 50 },
+          occupancy: { enabled: true, value: 80 },
+          investment: { enabled: false, value: 50 }
+        },
+        'investor': {
+          affordability: { enabled: false, value: 50 },
+          safety: { enabled: true, value: 60 },
+          income: { enabled: true, value: 65 },
+          occupancy: { enabled: true, value: 90 },
+          investment: { enabled: true, value: 80 }
+        }
+      };
+
+      const preset = presets[presetType];
+      if (!preset) return;
+
+      for (const [pref, settings] of Object.entries(preset)) {
+        const checkbox = document.getElementById(`pref-${pref}`);
+        const slider = document.getElementById(`weight-${pref}`);
+        if (checkbox && slider) {
+          checkbox.checked = settings.enabled;
+          slider.value = settings.value;
+        }
+      }
+
+      updateLifestyleMatches();
+      findLifestyleMatches();
+      
+      setTimeout(() => {
+        document.getElementById('lifestyleResults')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 300);
+    }
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('Test page loaded');
+      testS3Connection();
+    });
+  </script>
+</body>
+</html>

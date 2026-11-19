@@ -1,0 +1,1848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0c1017">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self' https://maps.googleapis.com https://maps.gstatic.com https://*.googleapis.com https://insite-data-storage.s3.amazonaws.com;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://*.googleapis.com https://cdn.jsdelivr.net;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com;
+    img-src 'self' data: https: blob:;
+    font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;
+    connect-src 'self' https://maps.googleapis.com https://*.googleapis.com https://*.s3.amazonaws.com;
+    frame-src 'self';
+    worker-src 'self' blob:;
+  ">
+
+  <link rel="icon" href="data:,">
+  <title>INSITE — Atlanta Property Intelligence</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Theme Controller — load before CSS to prevent flash -->
+  <script src="../Scripts/theme-controller.js"></script>
+
+  <!-- Primary Map Stylesheet -->
+  <link rel="stylesheet" href="../Stylesheet/map-reorganized.css">
+
+  <!-- API + helpers -->
+  <script src="../Scripts/dev-keys.js" onerror="console.info('dev-keys.js not present — using production backend.')"></script>
+  <script src="../Scripts/api-config.js"></script>
+  <script src="../Scripts/input-sanitizer.js"></script>
+  <script src="../Scripts/aws-s3-config.js"></script>
+</head>
+<body>
+
+  <!-- Full-screen map canvas -->
+  <div id="map"></div>
+
+  <!-- Loading bar -->
+  <div id="loading-bar"></div>
+
+  <!-- ================================================
+       SCORE RING — cursor-following hover indicator
+       ================================================ -->
+  <div id="score-ring-overlay">
+    <div class="score-ring-container">
+      <div class="score-ring-bg"></div>
+      <svg class="score-ring-svg" viewBox="0 0 60 60">
+        <circle class="score-ring-track" cx="30" cy="30" r="25"/>
+        <circle class="score-ring-progress" cx="30" cy="30" r="25"
+          stroke-dasharray="157 157" stroke-dashoffset="157"/>
+      </svg>
+      <div class="score-ring-text">
+        <div class="score-ring-value" id="score-ring-value">0</div>
+        <div class="score-ring-label">SCORE</div>
+      </div>
+    </div>
+    <div id="score-ring-location"></div>
+  </div>
+
+  <!-- ================================================
+       TOP BAR
+       ================================================ -->
+  <div id="top-bar">
+    <!-- Logo -->
+    <div id="logo">
+      <img src="../Img/insite_new_logo_transparent.png"
+           onerror="this.style.display='none'"
+           alt="INSITE">
+      <span>INSITE</span>
+    </div>
+
+    <!-- Search -->
+    <div id="search-container">
+      <div id="search-wrapper">
+        <button id="search-button" title="Search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+        <input id="search-input" type="text"
+               placeholder="Search ZIP, city, or neighborhood…"
+               autocomplete="off">
+      </div>
+      <div id="search-mode-toggle">
+        <button class="search-mode-btn active" id="search-mode-zip">ZIP</button>
+        <button class="search-mode-btn" id="search-mode-city">City</button>
+        <button class="search-mode-btn" id="search-mode-neighborhood">Neighborhood</button>
+      </div>
+      <div id="autocomplete-dropdown"></div>
+    </div>
+
+    <!-- Data layer selector (in top bar) -->
+    <div id="data-layer-selector">
+      <span id="data-layer-label">Layer</span>
+      <select id="color-by-select">
+        <option value="area_rating">Overall Rating</option>
+        <option value="avg_value">Home Value</option>
+        <option value="population">Population</option>
+        <option value="median_income">Income</option>
+        <option value="crime_rate">Crime Rate</option>
+        <option value="housing_vacancy_rate">Vacancy Rate</option>
+        <option value="transit_score">Transit Score</option>
+        <option value="parks_score">Parks Score</option>
+      </select>
+    </div>
+
+    <!-- Control buttons -->
+    <div id="controls">
+      <button class="icon-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme">
+        <i id="themeIcon" class="fa-solid fa-moon"></i>
+      </button>
+      <button class="icon-btn" id="stats-btn" title="Area Statistics">
+        <i class="fa-solid fa-chart-bar"></i>
+      </button>
+      <button class="icon-btn" id="transit-oriented-btn" title="Transit-Oriented Areas">
+        <i class="fa-solid fa-train-subway"></i>
+      </button>
+      <button class="icon-btn" id="view-toggle" title="Toggle satellite view">
+        <i class="fa-solid fa-satellite"></i>
+      </button>
+      <button class="icon-btn" id="filter-toggle" title="Filters">
+        <i class="fa-solid fa-sliders"></i>
+      </button>
+      <button class="icon-btn" id="enhanced-btn" title="Enhanced Features"
+        style="background:linear-gradient(135deg,#0d9488,#f59e0b);color:#0c1017;border-color:transparent;">
+        <i class="fa-solid fa-sparkles"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================================================
+       LEGEND PANEL — bottom-left
+       ================================================ -->
+  <div id="legend-panel">
+    <div id="legend-header">
+      <span id="legend-title">Overall Rating</span>
+      <button id="legend-collapse-btn" onclick="toggleLegend()" title="Collapse legend">−</button>
+    </div>
+    <div id="legend-content">
+      <div id="legend-gradient" title="Click to see scale values"></div>
+      <div class="legend-labels">
+        <span id="legend-min">Low</span>
+        <span id="legend-max">High</span>
+      </div>
+      <div id="scale-markers" style="display:none; margin-top:8px; font-size:11px; color:var(--text-muted); display:none; justify-content:space-between;">
+        <span id="scale-low"></span>
+        <span id="scale-mid"></span>
+        <span id="scale-high"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================
+       INFO CARDS — bottom-center (on click)
+       ================================================ -->
+  <div id="info-cards-panel">
+    <div id="info-cards-header">
+      <div id="info-cards-title">
+        <i class="fa-solid fa-location-dot"></i>
+        <span id="info-cards-zip">—</span>
+      </div>
+      <button id="info-cards-close" title="Close">&times;</button>
+    </div>
+    <div id="info-cards-grid"></div>
+    <div id="info-cards-actions" style="margin-top:12px;display:flex;gap:8px;">
+      <button class="btn-action" id="btn-add-compare">
+        <i class="fa-solid fa-chart-bar"></i> Compare
+      </button>
+      <button class="btn-action secondary" id="btn-zoom-out">
+        <i class="fa-solid fa-arrow-left"></i> Overview
+      </button>
+    </div>
+  </div>
+
+  <!-- ================================================
+       FILTERS PANEL — top-left flyout
+       ================================================ -->
+  <div id="filters-panel">
+    <div id="filters-header">
+      <span id="filters-title"><i class="fa-solid fa-sliders"></i> Filters</span>
+      <button id="filters-close" title="Close filters">&times;</button>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-group-title">Display Data</div>
+      <div class="filter-item">
+        <input type="checkbox" id="show-population" checked>
+        <i class="fa-solid fa-users"></i>
+        <label for="show-population">Population</label>
+      </div>
+      <div class="filter-item">
+        <input type="checkbox" id="show-income" checked>
+        <i class="fa-solid fa-dollar-sign"></i>
+        <label for="show-income">Income</label>
+      </div>
+      <div class="filter-item">
+        <input type="checkbox" id="show-crime" checked>
+        <i class="fa-solid fa-shield-halved"></i>
+        <label for="show-crime">Crime</label>
+      </div>
+      <div class="filter-item">
+        <input type="checkbox" id="show-vacancy" checked>
+        <i class="fa-solid fa-house"></i>
+        <label for="show-vacancy">Vacancy</label>
+      </div>
+      <div class="filter-item">
+        <input type="checkbox" id="show-transit" checked>
+        <i class="fa-solid fa-train-subway"></i>
+        <label for="show-transit">Transit Access</label>
+      </div>
+      <div class="filter-item">
+        <input type="checkbox" id="show-parks" checked>
+        <i class="fa-solid fa-tree"></i>
+        <label for="show-parks">Parks & Green Space</label>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-group-title">Min Home Value</div>
+      <div class="filter-range">
+        <input type="range" id="filter-min-value" class="notched-slider"
+               min="0" max="800000" step="25000" value="0">
+        <span id="filter-min-value-label" style="font-size:11px;font-weight:600;min-width:48px;text-align:right;">$0</span>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-group-title">Min Transit Score</div>
+      <div class="filter-range">
+        <input type="range" id="filter-min-transit" class="notched-slider"
+               min="0" max="100" step="10" value="0">
+        <span id="filter-min-transit-label" style="font-size:11px;font-weight:600;min-width:32px;text-align:right;">0</span>
+      </div>
+    </div>
+
+    <button class="filter-action-btn" id="filter-reset-btn">
+      <i class="fa-solid fa-rotate-left"></i> Reset Filters
+    </button>
+  </div>
+
+  <!-- ================================================
+       QUICK STATS PANEL — top-right flyout
+       ================================================ -->
+  <div id="quick-stats-panel">
+    <div id="quick-stats-header"><i class="fa-solid fa-chart-bar"></i> Metro Overview</div>
+    <div class="quick-stat">
+      <span class="quick-stat-label"><i class="fa-solid fa-map-pin"></i> ZIP Areas</span>
+      <span class="quick-stat-value" id="stat-areas">—</span>
+    </div>
+    <div class="quick-stat">
+      <span class="quick-stat-label"><i class="fa-solid fa-sack-dollar"></i> Avg Value</span>
+      <span class="quick-stat-value" id="stat-value">—</span>
+    </div>
+    <div class="quick-stat">
+      <span class="quick-stat-label"><i class="fa-solid fa-users"></i> Avg Population</span>
+      <span class="quick-stat-value" id="stat-pop">—</span>
+    </div>
+    <div class="quick-stat">
+      <span class="quick-stat-label"><i class="fa-solid fa-dollar-sign"></i> Median Income</span>
+      <span class="quick-stat-value" id="stat-income">—</span>
+    </div>
+    <div class="quick-stat">
+      <span class="quick-stat-label"><i class="fa-solid fa-shield-halved"></i> Crime/100</span>
+      <span class="quick-stat-value" id="stat-crime">—</span>
+    </div>
+    <div class="quick-stat">
+      <span class="quick-stat-label"><i class="fa-solid fa-star"></i> Avg Rating</span>
+      <span class="quick-stat-value" id="stat-rating">—</span>
+    </div>
+    <div class="quick-stat">
+      <span class="quick-stat-label"><i class="fa-solid fa-train-subway"></i> Avg Transit</span>
+      <span class="quick-stat-value" id="stat-transit">—</span>
+    </div>
+    <div class="quick-stat">
+      <span class="quick-stat-label"><i class="fa-solid fa-tree"></i> Avg Parks</span>
+      <span class="quick-stat-value" id="stat-parks">—</span>
+    </div>
+  </div>
+
+  <!-- ================================================
+       DETAILS DRAWER — right slide-in
+       ================================================ -->
+  <div id="details-drawer">
+    <div id="details-header">
+      <div id="details-title">Area Details</div>
+      <button id="details-close" title="Close">&times;</button>
+    </div>
+    <div id="details-content"></div>
+  </div>
+
+  <!-- ================================================
+       COMPARISON PANEL — floating bottom-right
+       ================================================ -->
+  <div id="comparison-panel" style="
+    position:fixed; bottom:20px; right:20px;
+    width:280px; z-index:300;
+    background:var(--bg-solid); border:2px solid var(--border);
+    border-radius:var(--radius-md); box-shadow:var(--shadow-lg);
+    padding:var(--space-md); display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;font-weight:700;color:var(--cream);text-transform:uppercase;letter-spacing:.5px;">
+        <i class="fa-solid fa-chart-bar"></i> Compare Areas
+      </span>
+      <button id="comparison-clear" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;">Clear All</button>
+    </div>
+    <div id="comparison-list"></div>
+    <div id="comparison-summary" style="margin-top:10px;font-size:11px;color:var(--text-muted);">
+      Ctrl+Click to add areas · Max 3
+    </div>
+  </div>
+
+  <!-- ================================================
+       ENHANCED FEATURES PANEL
+       ================================================ -->
+  <div id="enhanced-panel" style="
+    display:none; position:fixed; top:76px; right:20px;
+    width:300px; max-height:calc(100vh - 96px);
+    overflow-y:auto; z-index:500;
+    background:var(--bg-solid); border:2px solid var(--border);
+    border-radius:var(--radius-md); box-shadow:var(--shadow-lg);
+    padding:var(--space-lg);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 style="margin:0;font-size:16px;background:linear-gradient(135deg,#0d9488,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        <i class="fa-solid fa-sparkles"></i> Enhanced Features
+      </h3>
+      <button id="enhanced-close" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;line-height:1;">&times;</button>
+    </div>
+    <div style="display:grid;gap:10px;">
+      <button class="enhanced-card" onclick="window.toggleBikeShare()">
+        <i class="fa-solid fa-bicycle"></i>
+        <div>
+          <div style="font-weight:700;font-size:13px;">Bike Share Stations</div>
+          <div style="font-size:11px;color:var(--text-muted);">Find nearby bike rentals</div>
+        </div>
+      </button>
+      <button class="enhanced-card" onclick="window.toggleWeatherWidget()">
+        <i class="fa-solid fa-cloud-sun"></i>
+        <div>
+          <div style="font-weight:700;font-size:13px;">Weather Widget</div>
+          <div style="font-size:11px;color:var(--text-muted);">Current conditions & UV index</div>
+        </div>
+      </button>
+      <button class="enhanced-card" onclick="window.enableRealTimeTransit()">
+        <i class="fa-solid fa-bolt"></i>
+        <div>
+          <div style="font-weight:700;font-size:13px;">Real-Time Transit</div>
+          <div style="font-size:11px;color:var(--text-muted);">Live arrival predictions (sim)</div>
+        </div>
+      </button>
+      <button class="enhanced-card" onclick="window.showCarbonCalculator()">
+        <i class="fa-solid fa-leaf" style="color:#22c55e;"></i>
+        <div>
+          <div style="font-weight:700;font-size:13px;">Carbon Calculator</div>
+          <div style="font-size:11px;color:var(--text-muted);">Estimate your CO₂ savings</div>
+        </div>
+      </button>
+      <button class="enhanced-card" onclick="window.showHeatmap()">
+        <i class="fa-solid fa-fire" style="color:#f97316;"></i>
+        <div>
+          <div style="font-weight:700;font-size:13px;">Investment Heatmap</div>
+          <div style="font-size:11px;color:var(--text-muted);">Highlight highest-value ZIPs</div>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================================================
+       KEYBOARD HINTS
+       ================================================ -->
+  <div id="keyboard-hints" style="
+    position:fixed; bottom:20px; left:50%;
+    transform:translateX(-50%);
+    background:var(--bg-solid); border:1px solid var(--border);
+    border-radius:var(--radius-md); padding:10px 20px;
+    display:flex; gap:20px; z-index:200;
+    opacity:0; transition:opacity 0.3s; pointer-events:none;
+    box-shadow:var(--shadow-lg);">
+    <span style="font-size:11px;color:var(--text-muted);"><kbd>Hover</kbd> Preview</span>
+    <span style="font-size:11px;color:var(--text-muted);"><kbd>Click</kbd> Details</span>
+    <span style="font-size:11px;color:var(--text-muted);"><kbd>Ctrl+Click</kbd> Compare</span>
+    <span style="font-size:11px;color:var(--text-muted);"><kbd>?</kbd> Help</span>
+  </div>
+
+  <!-- ================================================
+       ADDITIONAL INLINE STYLES
+       ================================================ -->
+  <style>
+    kbd {
+      background: var(--bg-light);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 10px;
+      font-family: inherit;
+      font-weight: 700;
+      color: var(--cream);
+    }
+
+    /* Enhanced feature cards */
+    .enhanced-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg-light);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      text-align: left;
+      color: var(--text);
+      transition: all 0.2s;
+      width: 100%;
+    }
+    .enhanced-card:hover {
+      border-color: var(--cream);
+      background: rgba(13,148,136,0.06);
+      transform: translateY(-1px);
+    }
+    .enhanced-card i {
+      font-size: 20px;
+      color: var(--cream);
+      width: 24px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    /* Grade chip */
+    .grade-chip {
+      display: inline-flex; align-items: center;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 700;
+      color: #0c1017;
+    }
+    .grade-a  { background: #10b981; }
+    .grade-b  { background: #84cc16; }
+    .grade-c  { background: #f59e0b; }
+    .grade-d  { background: #f97316; }
+    .grade-f  { background: #ef4444; }
+
+    /* Compact stats grid inside info-cards-grid */
+    .info-cards-grid-inner {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+    }
+
+    /* Comparison item */
+    .comparison-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      background: var(--bg-light);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .comparison-item .remove-btn {
+      background: none; border: none;
+      color: var(--text-muted); cursor: pointer;
+      font-size: 16px; line-height: 1;
+    }
+    .comparison-item .remove-btn:hover { color: var(--danger); }
+
+    /* Zoom-out button */
+    .zoom-out-btn {
+      width: 100%; margin-top: 12px;
+      padding: 10px; background: var(--bg-light);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      color: var(--text); font-size: 12px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center;
+      justify-content: center; gap: 6px; transition: all 0.2s;
+    }
+    .zoom-out-btn:hover {
+      border-color: var(--cream); color: var(--cream);
+    }
+
+    /* Notification toast */
+    .toast {
+      position: fixed; top: 76px; right: 20px;
+      background: var(--bg-solid); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 14px 18px;
+      color: var(--text); box-shadow: var(--shadow-lg);
+      z-index: 10000; max-width: 300px;
+      animation: toastIn 0.3s ease;
+      border-left: 4px solid var(--cream);
+      font-size: 13px; font-weight: 500;
+    }
+    .toast.success { border-left-color: #10b981; }
+    .toast.error   { border-left-color: #ef4444; }
+    .toast.warning { border-left-color: #f59e0b; }
+
+    @keyframes toastIn {
+      from { transform: translateX(320px); opacity: 0; }
+      to   { transform: translateX(0);     opacity: 1; }
+    }
+    @keyframes toastOut {
+      from { transform: translateX(0);     opacity: 1; }
+      to   { transform: translateX(320px); opacity: 0; }
+    }
+
+    /* Transit-oriented banner */
+    @keyframes slideDown {
+      from { opacity:0; transform:translateX(-50%) translateY(-20px); }
+      to   { opacity:1; transform:translateX(-50%) translateY(0); }
+    }
+    @keyframes slideUp {
+      from { opacity:1; transform:translateX(-50%) translateY(0); }
+      to   { opacity:0; transform:translateX(-50%) translateY(-20px); }
+    }
+
+    /* Keyboard hints visibility */
+    #keyboard-hints.show { opacity: 1; pointer-events: auto; }
+
+    /* Detail sections */
+    .detail-section { margin-bottom: 20px; }
+    .detail-section-title {
+      font-size: 11px; font-weight: 700;
+      color: var(--cream); text-transform: uppercase;
+      letter-spacing: .5px; margin-bottom: 8px;
+      padding-bottom: 6px; border-bottom: 1px solid var(--border);
+    }
+
+    /* Score bar */
+    .score-bar-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 6px;
+    }
+    .score-bar-label { font-size: 11px; color: var(--text-muted); width: 90px; flex-shrink: 0; }
+    .score-bar-track {
+      flex: 1; height: 6px; background: rgba(255,255,255,.06);
+      border-radius: 6px; overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%; border-radius: 6px;
+      transition: width .8s cubic-bezier(.25,.46,.45,.94);
+    }
+    .score-bar-value { font-size: 11px; font-weight: 700; width: 36px; text-align: right; }
+
+    /* Review stars */
+    .star-row { display: flex; gap: 4px; margin: 4px 0; }
+    .star-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 18px; color: var(--text-muted);
+      transition: color .15s; padding: 0;
+    }
+    .star-btn.active, .star-btn:hover { color: #f59e0b; }
+  </style>
+
+  <!-- ================================================
+       PHASE 2 FEATURES
+       ================================================ -->
+  <script src="../Scripts/phase2-features.js"></script>
+  <script src="../Scripts/transit-helper.js"></script>
+  <script src="../Scripts/parks-helper.js"></script>
+
+  <!-- ================================================
+       MAIN APPLICATION SCRIPT
+       ================================================ -->
+  <script>
+  // ──────────────────────────────────────────────────
+  // PANEL UTILITIES
+  // ──────────────────────────────────────────────────
+  function toggleLegend() {
+    const panel = document.getElementById('legend-panel');
+    const btn   = document.getElementById('legend-collapse-btn');
+    panel.classList.toggle('collapsed');
+    btn.textContent = panel.classList.contains('collapsed') ? '+' : '−';
+  }
+
+  function showToast(message, type = 'info', duration = 4000) {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = message;
+    document.body.appendChild(t);
+    setTimeout(() => {
+      t.style.animation = 'toastOut .3s ease forwards';
+      setTimeout(() => t.remove(), 300);
+    }, duration);
+  }
+
+  // ──────────────────────────────────────────────────
+  // MAP INIT — called by Google Maps callback
+  // ──────────────────────────────────────────────────
+  async function initMap() {
+    const darkStyle = [
+      {elementType:'geometry',         stylers:[{color:'#0f172a'}]},
+      {elementType:'labels.text.fill', stylers:[{color:'#64748b'}]},
+      {elementType:'labels.text.stroke',stylers:[{color:'#0f172a'}]},
+      {featureType:'administrative',    elementType:'geometry', stylers:[{color:'#334155'}]},
+      {featureType:'administrative.country', elementType:'labels.text.fill', stylers:[{color:'#94a3b8'}]},
+      {featureType:'poi',              stylers:[{visibility:'off'}]},
+      {featureType:'road',             elementType:'geometry',     stylers:[{color:'#1e293b'}]},
+      {featureType:'road',             elementType:'labels.icon',  stylers:[{visibility:'off'}]},
+      {featureType:'road.arterial',    elementType:'labels.text.fill', stylers:[{color:'#475569'}]},
+      {featureType:'transit',          stylers:[{visibility:'off'}]},
+      {featureType:'water',            elementType:'geometry',     stylers:[{color:'#020617'}]},
+      {featureType:'water',            elementType:'labels.text.fill', stylers:[{color:'#1e40af'}]}
+    ];
+
+    const lightStyle = [
+      {elementType:'geometry',          stylers:[{color:'#f8fafc'}]},
+      {elementType:'labels.text.fill',  stylers:[{color:'#475569'}]},
+      {featureType:'administrative',    elementType:'geometry.stroke', stylers:[{color:'#cbd5e1'}]},
+      {featureType:'poi',               stylers:[{visibility:'off'}]},
+      {featureType:'road',              elementType:'geometry', stylers:[{color:'#e2e8f0'}]},
+      {featureType:'road.arterial',     elementType:'labels.text.fill', stylers:[{color:'#64748b'}]},
+      {featureType:'transit',           stylers:[{visibility:'off'}]},
+      {featureType:'water',             elementType:'geometry', stylers:[{color:'#bfdbfe'}]}
+    ];
+
+    let satelliteMode = false;
+    let searchData    = [];
+    const isDark = () => document.documentElement.getAttribute('data-theme') !== 'light';
+
+    const map = new google.maps.Map(document.getElementById('map'), {
+      zoom: 11,
+      center: { lat: 33.75, lng: -84.39 },
+      mapTypeId: google.maps.MapTypeId.ROADMAP,
+      styles: isDark() ? darkStyle : lightStyle,
+      mapTypeControl:     false,
+      fullscreenControl:  false,
+      streetViewControl:  false,
+      zoomControl:        true,
+      zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
+      maxZoom: 20,
+      minZoom: 3
+    });
+
+    // Refresh map style when theme changes
+    const themeObserver = new MutationObserver(() => {
+      if (!satelliteMode) {
+        map.setOptions({ styles: isDark() ? darkStyle : lightStyle });
+      }
+    });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+    // Transit / parks helpers
+    const transitHelper = new TransitHelper();
+    const parksHelper   = new ParksHelper();
+    let transitMarkers  = [], parksMarkers  = [];
+    let transitVisible  = false, parksVisible = false;
+
+    // ── Load GeoJSON ──────────────────────────────
+    document.getElementById('loading-bar').style.width = '40%';
+    let geoData;
+    const CACHE_KEY = 'geojson_cache_v4';
+
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      if (cached) {
+        geoData = JSON.parse(cached);
+        console.log('✅ GeoJSON loaded from session cache');
+      } else {
+        const s3Url    = INSITE_S3_CONFIG.getUrl(INSITE_S3_CONFIG.ZIP_CODES.USPS_CLEAN);
+        const localUrl = 'USPS_Zip_Codes_enriched.geojson';
+        let response;
+        try {
+          response = await fetch(s3Url);
+          if (!response.ok) throw new Error('S3 unavailable');
+          console.log('✅ GeoJSON loaded from AWS S3');
+        } catch {
+          console.warn('⚠️ AWS S3 failed — falling back to local file');
+          response = await fetch(localUrl);
+        }
+        if (!response.ok) throw new Error('Failed to load GeoJSON data');
+        geoData = await response.json();
+        try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(geoData)); } catch {}
+      }
+    } catch (err) {
+      console.error('GeoJSON load error:', err);
+      showToast('<i class="fa-solid fa-triangle-exclamation"></i> Failed to load map data. Please refresh.', 'error', 0);
+      document.getElementById('loading-bar').style.width = '0';
+      return;
+    }
+
+    document.getElementById('loading-bar').style.width = '70%';
+
+    // Filter to valid 5-digit ZIPs only
+    geoData.features = geoData.features.filter(f => {
+      let zip = f.properties.NAME || f.properties.zip || '';
+      zip = String(zip).split('-')[0].trim();
+      if (zip.length === 5 && /^\d+$/.test(zip)) {
+        f.properties.NAME = zip;
+        return true;
+      }
+      return false;
+    });
+
+    map.data.addGeoJson(geoData);
+
+    // ── Calculate transit & parks scores ─────────
+    map.data.forEach(feature => {
+      const geom = feature.getGeometry();
+      if (!geom) return;
+      const type = geom.getType();
+      const bounds = new google.maps.LatLngBounds();
+      const addPoints = (g) => {
+        if (g.getType() === 'Polygon') {
+          g.getAt(0).getArray().forEach(ll => bounds.extend(ll));
+        } else if (g.getType() === 'MultiPolygon') {
+          g.getArray().forEach(poly => poly.getAt(0).getArray().forEach(ll => bounds.extend(ll)));
+        }
+      };
+      addPoints(geom);
+      const center = bounds.getCenter();
+      if (!center) return;
+
+      const ts = transitHelper.calculateTransitScore(center.lat(), center.lng());
+      const ps = parksHelper.calculateParksScore(center.lat(), center.lng());
+      feature.setProperty('transit_score', ts.score);
+      feature.setProperty('transit_data',  ts);
+      feature.setProperty('parks_score',   ps.score);
+      feature.setProperty('parks_data',    ps);
+    });
+
+    document.getElementById('loading-bar').style.width = '100%';
+    setTimeout(() => document.getElementById('loading-bar').style.width = '0', 500);
+
+    // ── Color field & scale ───────────────────────
+    let selectedField  = 'area_rating';
+    let minValue = 1, maxValue = 10;
+
+    const fieldLabels = {
+      area_rating:           'Overall Rating',
+      avg_value:             'Home Value',
+      population:            'Population',
+      median_income:         'Median Income',
+      crime_rate:            'Crime Rate',
+      housing_vacancy_rate:  'Vacancy Rate',
+      transit_score:         'Transit Score',
+      parks_score:           'Parks Score'
+    };
+
+    const fieldFormatters = {
+      area_rating:           v => (Math.round(v * 10) / 10) + '/10',
+      avg_value:             v => '$' + (v / 1000).toFixed(0) + 'k',
+      population:            v => Number(v).toLocaleString(),
+      median_income:         v => '$' + (v / 1000).toFixed(0) + 'k',
+      crime_rate:            v => v.toFixed(1),
+      housing_vacancy_rate:  v => v.toFixed(1) + '%',
+      transit_score:         v => Math.round(v) + '/100',
+      parks_score:           v => Math.round(v) + '/100'
+    };
+
+    function recalculateColorScale() {
+      if (selectedField === 'area_rating') {
+        minValue = 1; maxValue = 10;
+      } else if (selectedField === 'transit_score' || selectedField === 'parks_score') {
+        minValue = 0; maxValue = 100;
+      } else {
+        const vals = [];
+        map.data.forEach(f => {
+          const v = f.getProperty(selectedField);
+          if (v != null && !isNaN(v) && v > 0) vals.push(v);
+        });
+        if (vals.length === 0) { minValue = 0; maxValue = 100; }
+        else {
+          vals.sort((a,b) => a - b);
+          minValue = vals[Math.floor(vals.length * 0.05)];
+          maxValue = vals[Math.floor(vals.length * 0.95)];
+        }
+      }
+
+      const fmt = fieldFormatters[selectedField] || (v => v);
+      document.getElementById('legend-title').textContent = fieldLabels[selectedField] || selectedField;
+      document.getElementById('legend-min').textContent   = fmt(minValue);
+      document.getElementById('legend-max').textContent   = fmt(maxValue);
+
+      const mid = (minValue + maxValue) / 2;
+      document.getElementById('scale-low').textContent  = fmt(minValue);
+      document.getElementById('scale-mid').textContent  = fmt(mid);
+      document.getElementById('scale-high').textContent = fmt(maxValue);
+    }
+
+    function interpolateColor(t) {
+      const stops  = [0, 0.2, 0.4, 0.6, 0.8, 1];
+      const colors = ['#ef4444','#fc8d59','#fee08b','#66bd63','#1a9850','#0f4c2a'];
+      let i = 0;
+      for (let j = 0; j < stops.length - 1; j++) {
+        if (t >= stops[j] && t <= stops[j+1]) { i = j; break; }
+      }
+      const localT = (t - stops[i]) / (stops[i+1] - stops[i]);
+      const h = (c) => [parseInt(c.slice(1,3),16), parseInt(c.slice(3,5),16), parseInt(c.slice(5,7),16)];
+      const [r1,g1,b1] = h(colors[i]);
+      const [r2,g2,b2] = h(colors[i+1]);
+      const r = Math.round(r1 + (r2-r1) * localT);
+      const g = Math.round(g1 + (g2-g1) * localT);
+      const b = Math.round(b1 + (b2-b1) * localT);
+      return `#${((r<<16)|(g<<8)|b).toString(16).padStart(6,'0')}`;
+    }
+
+    function getColor(val) {
+      if (val == null || isNaN(val)) return '#374151';
+      const t = Math.max(0, Math.min(1, (val - minValue) / (maxValue - minValue)));
+      return interpolateColor(t);
+    }
+
+    // ── User reviews ────────────────────────────
+    function getUserReviews(zip) {
+      return JSON.parse(localStorage.getItem('areaReviews') || '{}')[zip] || [];
+    }
+    function addUserReview(zip, rating, comment) {
+      const all = JSON.parse(localStorage.getItem('areaReviews') || '{}');
+      if (!all[zip]) all[zip] = [];
+      all[zip].push({ rating: +rating, comment, date: new Date().toLocaleDateString() });
+      localStorage.setItem('areaReviews', JSON.stringify(all));
+    }
+    function getAvgUserRating(zip) {
+      const r = getUserReviews(zip);
+      if (!r.length) return null;
+      return Math.round(r.reduce((s, x) => s + x.rating, 0) / r.length * 10) / 10;
+    }
+    window.submitReview = function(zip) {
+      const rating  = document.getElementById('user-rating-input').value;
+      const comment = document.getElementById('user-comment')?.value?.trim() || '';
+      if (!rating) { showToast('Please select a star rating', 'warning'); return; }
+      addUserReview(zip, rating, comment);
+      showToast('<i class="fa-solid fa-check"></i> Review saved — thank you!', 'success');
+      updateMapStyle();
+    };
+
+    // ── Area rating calculation ──────────────────
+    function calculateAreaRating(feature) {
+      const zip        = feature.getProperty('NAME');
+      const avgValue   = feature.getProperty('avg_value')   || 0;
+      const income     = feature.getProperty('median_income') || 0;
+      const crime      = feature.getProperty('crime_rate')  ?? 0;
+      const population = feature.getProperty('population')  || 0;
+      let score = 0, count = 0;
+
+      if (avgValue   > 0) { score += Math.min(10, (avgValue / 500000) * 10);             count++; }
+      if (income     > 0) { score += Math.min(10, (income   / 150000) * 10);             count++; }
+      if (crime >= 0)     { score += Math.max(0,  10 - (crime / 50) * 10);              count++; }
+      if (population > 0) {
+        const ratio = population / 50000;
+        score += ratio > 1 ? Math.max(1, 10 / Math.sqrt(ratio)) : Math.min(10, ratio * 10);
+        count++;
+      }
+
+      let dataRating   = count > 0 ? score / count : 5;
+      const userRating = getAvgUserRating(zip);
+      if (userRating !== null) dataRating = (dataRating + userRating) / 2;
+      return Math.round(dataRating * 10) / 10;
+    }
+
+    function getGradeChip(score, max = 10) {
+      const pct = (score / max) * 100;
+      if (pct >= 80) return `<span class="grade-chip grade-a">A</span>`;
+      if (pct >= 65) return `<span class="grade-chip grade-b">B</span>`;
+      if (pct >= 50) return `<span class="grade-chip grade-c">C</span>`;
+      if (pct >= 35) return `<span class="grade-chip grade-d">D</span>`;
+      return `<span class="grade-chip grade-f">F</span>`;
+    }
+
+    function scoreBarColor(score, max = 100) {
+      const pct = (score / max) * 100;
+      if (pct >= 80)  return '#10b981';
+      if (pct >= 60)  return '#84cc16';
+      if (pct >= 40)  return '#f59e0b';
+      if (pct >= 20)  return '#f97316';
+      return '#ef4444';
+    }
+
+    function scoreBar(label, score, max, fmt) {
+      const pct   = Math.max(0, Math.min(100, (score / max) * 100));
+      const color = scoreBarColor(score, max);
+      return `
+        <div class="score-bar-row">
+          <span class="score-bar-label">${label}</span>
+          <div class="score-bar-track">
+            <div class="score-bar-fill" style="width:${pct}%;background:${color};"></div>
+          </div>
+          <span class="score-bar-value" style="color:${color};">${fmt ? fmt(score) : Math.round(score)}</span>
+        </div>`;
+    }
+
+    // ── Map style ────────────────────────────────
+    let activeFilters = {
+      minValue:   0,
+      minTransit: 0
+    };
+
+    function featurePassesFilter(feature) {
+      const val     = feature.getProperty('avg_value')    || 0;
+      const transit = feature.getProperty('transit_score') || 0;
+      return val >= activeFilters.minValue && transit >= activeFilters.minTransit;
+    }
+
+    function updateMapStyle() {
+      recalculateColorScale();
+      map.data.setStyle(feature => {
+        if (!featurePassesFilter(feature)) {
+          return { fillOpacity: 0.08, strokeWeight: 0.5, strokeColor: '#334155', fillColor: '#334155' };
+        }
+        const val = selectedField === 'area_rating'
+          ? calculateAreaRating(feature)
+          : feature.getProperty(selectedField);
+        return {
+          fillColor:   getColor(val),
+          strokeWeight: 0.8,
+          strokeColor: '#1e293b',
+          fillOpacity: 0.72
+        };
+      });
+    }
+
+    recalculateColorScale();
+    updateMapStyle();
+
+    // ── Color-by selector ───────────────────────
+    document.getElementById('color-by-select').addEventListener('change', e => {
+      selectedField = e.target.value;
+      updateMapStyle();
+    });
+
+    // ── Legend gradient click ───────────────────
+    document.getElementById('legend-gradient').addEventListener('click', () => {
+      const el = document.getElementById('scale-markers');
+      const next = el.style.display === 'flex' ? 'none' : 'flex';
+      el.style.display = next;
+    });
+
+    // ── Filter panel ────────────────────────────
+    const filterToggle = document.getElementById('filter-toggle');
+    const filtersPanel = document.getElementById('filters-panel');
+    const filtersClose = document.getElementById('filters-close');
+
+    filterToggle.addEventListener('click', () => {
+      filtersPanel.classList.toggle('visible');
+      filterToggle.classList.toggle('active', filtersPanel.classList.contains('visible'));
+    });
+    filtersClose.addEventListener('click', () => {
+      filtersPanel.classList.remove('visible');
+      filterToggle.classList.remove('active');
+    });
+
+    // Range filter sliders
+    const minValueSlider   = document.getElementById('filter-min-value');
+    const minTransitSlider = document.getElementById('filter-min-transit');
+
+    minValueSlider.addEventListener('input', e => {
+      const v = +e.target.value;
+      activeFilters.minValue = v;
+      document.getElementById('filter-min-value-label').textContent = v === 0 ? '$0' : '$' + (v/1000).toFixed(0) + 'k';
+      updateMapStyle();
+    });
+    minTransitSlider.addEventListener('input', e => {
+      const v = +e.target.value;
+      activeFilters.minTransit = v;
+      document.getElementById('filter-min-transit-label').textContent = v;
+      updateMapStyle();
+    });
+
+    document.getElementById('filter-reset-btn').addEventListener('click', () => {
+      minValueSlider.value   = 0;
+      minTransitSlider.value = 0;
+      activeFilters = { minValue: 0, minTransit: 0 };
+      document.getElementById('filter-min-value-label').textContent   = '$0';
+      document.getElementById('filter-min-transit-label').textContent = '0';
+      // Reset checkboxes
+      ['show-population','show-income','show-crime','show-vacancy','show-transit','show-parks'].forEach(id => {
+        document.getElementById(id).checked = true;
+      });
+      updateMapStyle();
+    });
+
+    // ── Quick stats panel ────────────────────────
+    const statsBtn      = document.getElementById('stats-btn');
+    const statsPanel    = document.getElementById('quick-stats-panel');
+
+    statsBtn.addEventListener('click', () => {
+      statsPanel.classList.toggle('visible');
+      statsBtn.classList.toggle('active', statsPanel.classList.contains('visible'));
+    });
+
+    function updateStats() {
+      let total = 0;
+      let sumVal = 0, cVal = 0;
+      let sumPop = 0, cPop = 0;
+      let sumInc = 0, cInc = 0;
+      let sumCrime = 0, cCrime = 0;
+      let sumRating = 0, cRating = 0;
+      let sumTransit = 0, cTransit = 0;
+      let sumParks = 0, cParks = 0;
+
+      const searchTerms = new Set();
+
+      map.data.forEach(feature => {
+        const zip = feature.getProperty('NAME');
+        if (!zip) return;
+        total++;
+        searchTerms.add(zip);
+
+        const city  = feature.getProperty('city') || feature.getProperty('CITY');
+        const nbh   = feature.getProperty('neighborhood');
+        if (city) searchTerms.add(city);
+        if (nbh)  searchTerms.add(nbh);
+
+        const v = feature.getProperty('avg_value');
+        if (v > 0) { sumVal += v; cVal++; }
+        const p = feature.getProperty('population');
+        if (p > 0) { sumPop += p; cPop++; }
+        const i = feature.getProperty('median_income');
+        if (i > 0) { sumInc += i; cInc++; }
+        const c = feature.getProperty('crime_rate');
+        if (c >= 0) { sumCrime += c; cCrime++; }
+        const r = calculateAreaRating(feature);
+        if (r > 0) { sumRating += r; cRating++; }
+        const ts = feature.getProperty('transit_score');
+        if (ts != null) { sumTransit += ts; cTransit++; }
+        const ps = feature.getProperty('parks_score');
+        if (ps != null) { sumParks += ps; cParks++; }
+      });
+
+      document.getElementById('stat-areas').textContent   = total;
+      document.getElementById('stat-value').textContent   = cVal   ? '$' + (sumVal/cVal/1000).toFixed(0)   + 'k' : '—';
+      document.getElementById('stat-pop').textContent     = cPop   ? Math.round(sumPop/cPop).toLocaleString() : '—';
+      document.getElementById('stat-income').textContent  = cInc   ? '$' + (sumInc/cInc/1000).toFixed(0)  + 'k' : '—';
+      document.getElementById('stat-crime').textContent   = cCrime ? (sumCrime/cCrime).toFixed(1) : '—';
+      document.getElementById('stat-rating').textContent  = cRating ? (sumRating/cRating).toFixed(1) + '/10' : '—';
+      document.getElementById('stat-transit').textContent = cTransit ? Math.round(sumTransit/cTransit) + '/100' : '—';
+      document.getElementById('stat-parks').textContent   = cParks  ? Math.round(sumParks/cParks)   + '/100' : '—';
+
+      // Build search index
+      searchData = [];
+      const cityMap  = new Map();
+      const nbhMap   = new Map();
+      map.data.forEach(feature => {
+        const zip = feature.getProperty('NAME');
+        const city = (feature.getProperty('city') || feature.getProperty('CITY') || '').trim();
+        const nbh  = (feature.getProperty('neighborhood') || '').trim();
+        if (zip) searchData.push({ type: 'ZIP', value: zip, feature });
+        if (city) { if (!cityMap.has(city)) cityMap.set(city, []); cityMap.get(city).push(feature); }
+        if (nbh)  { if (!nbhMap.has(nbh))   nbhMap.set(nbh, []);   nbhMap.get(nbh).push(feature); }
+      });
+      cityMap.forEach((feats, name) => searchData.push({ type: 'City',         value: name, features: feats }));
+      nbhMap.forEach( (feats, name) => searchData.push({ type: 'Neighborhood', value: name, features: feats }));
+    }
+
+    updateStats();
+
+    // ── Hover — score ring ───────────────────────
+    const scoreRingOverlay = document.getElementById('score-ring-overlay');
+    let hoverTimeout, isHovering = false;
+    let mouseMoveHandler = null;
+
+    map.data.addListener('mouseover', event => {
+      if (currentClickedFeature) return;
+      isHovering = true;
+      clearTimeout(hoverTimeout);
+
+      hoverTimeout = setTimeout(() => {
+        if (!isHovering) return;
+
+        const rating = calculateAreaRating(event.feature);
+        const score  = Math.round(rating * 10);
+        const zip    = event.feature.getProperty('NAME');
+        const city   = event.feature.getProperty('city') || event.feature.getProperty('CITY');
+        const loc    = city ? `ZIP ${zip} · ${city}` : `ZIP ${zip}`;
+
+        document.getElementById('score-ring-value').textContent = score;
+        const color = score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444';
+        document.getElementById('score-ring-value').style.color = color;
+        document.getElementById('score-ring-location').textContent = loc;
+
+        const progress     = document.querySelector('.score-ring-progress');
+        const circumference = 2 * Math.PI * 25;
+        progress.style.strokeDasharray  = `${circumference} ${circumference}`;
+        progress.style.strokeDashoffset = circumference - (score / 100) * circumference;
+        progress.style.stroke           = color;
+
+        const pos = (e) => {
+          scoreRingOverlay.style.left = (e.pageX) + 'px';
+          scoreRingOverlay.style.top  = (e.pageY) + 'px';
+        };
+        pos(event.domEvent);
+
+        if (mouseMoveHandler) document.removeEventListener('mousemove', mouseMoveHandler);
+        mouseMoveHandler = pos;
+        document.addEventListener('mousemove', mouseMoveHandler);
+
+        scoreRingOverlay.classList.add('visible');
+      }, 40);
+
+      map.data.overrideStyle(event.feature, {
+        fillOpacity: 0.88,
+        strokeWeight: 2.5,
+        strokeColor: '#0d9488'
+      });
+    });
+
+    map.data.addListener('mouseout', () => {
+      isHovering = false;
+      clearTimeout(hoverTimeout);
+      scoreRingOverlay.classList.remove('visible');
+      if (mouseMoveHandler) {
+        document.removeEventListener('mousemove', mouseMoveHandler);
+        mouseMoveHandler = null;
+      }
+      if (!currentClickedFeature) map.data.revertStyle();
+    });
+
+    // ── Click — info cards + details drawer ──────
+    let currentClickedFeature = null;
+    const infoPanel            = document.getElementById('info-cards-panel');
+    const infoPanelZip         = document.getElementById('info-cards-zip');
+    const infoPanelGrid        = document.getElementById('info-cards-grid');
+    const detailsDrawer        = document.getElementById('details-drawer');
+    const detailsContent       = document.getElementById('details-content');
+    const detailsTitle         = document.getElementById('details-title');
+
+    function openInfoCard(feature) {
+      const zip    = feature.getProperty('NAME');
+      const city   = feature.getProperty('city') || feature.getProperty('CITY') || '';
+      const nbh    = feature.getProperty('neighborhood') || '';
+      const rating = calculateAreaRating(feature);
+      const score  = Math.round(rating * 10);
+
+      infoPanelZip.textContent = nbh ? `${zip} · ${nbh}, ${city}` : city ? `${zip} · ${city}` : `ZIP ${zip}`;
+
+      const ts  = feature.getProperty('transit_score') ?? 0;
+      const ps  = feature.getProperty('parks_score')   ?? 0;
+      const val = feature.getProperty('avg_value');
+      const inc = feature.getProperty('median_income');
+      const pop = feature.getProperty('population');
+      const cri = feature.getProperty('crime_rate');
+      const vac = feature.getProperty('housing_vacancy_rate');
+
+      const cards = [
+        { icon:'fa-star',          label:'Overall',   value: rating + '/10',                  pct: score,    color: scoreBarColor(score,100) },
+        { icon:'fa-train-subway',  label:'Transit',   value: Math.round(ts) + '/100',          pct: ts,       color: scoreBarColor(ts) },
+        { icon:'fa-tree',          label:'Parks',     value: Math.round(ps) + '/100',          pct: ps,       color: scoreBarColor(ps) },
+        val != null ? { icon:'fa-sack-dollar',   label:'Home Value', value:'$'+(val/1000).toFixed(0)+'k', pct: Math.min(100,(val/800000)*100), color:'#0d9488' } : null,
+        inc != null ? { icon:'fa-dollar-sign',   label:'Income',     value:'$'+(inc/1000).toFixed(0)+'k', pct: Math.min(100,(inc/150000)*100), color:'#14b8a6' } : null,
+        pop != null ? { icon:'fa-users',         label:'Population', value: Number(pop).toLocaleString(),   pct: Math.min(100,(pop/80000)*100),  color:'#64748b' } : null,
+        cri != null ? { icon:'fa-shield-halved', label:'Crime/100',  value: cri.toFixed(1),                 pct: Math.max(0,100-(cri/50)*100),   color: scoreBarColor(100-(cri/50)*100) } : null,
+        vac != null ? { icon:'fa-house',         label:'Vacancy',    value: vac.toFixed(1)+'%',             pct: Math.max(0,100-(vac/30)*100),   color:'#6b7280' } : null,
+      ].filter(Boolean);
+
+      infoPanelGrid.innerHTML = `<div class="info-cards-grid-inner">` +
+        cards.map(c => `
+          <div class="info-card">
+            <div class="info-card-icon"><i class="fa-solid ${c.icon}" style="color:${c.color}"></i></div>
+            <div class="info-card-label">${c.label}</div>
+            <div class="info-card-value" style="color:${c.color}">${c.value}</div>
+          </div>`).join('') + `</div>`;
+
+      infoPanel.classList.add('visible');
+
+      // Also populate the right-side details drawer
+      openDetailsDrawer(feature, zip, city, nbh, rating, ts, ps, val, inc, pop, cri, vac);
+    }
+
+    function openDetailsDrawer(feature, zip, city, nbh, rating, ts, ps, val, inc, pop, cri, vac) {
+      detailsTitle.textContent = nbh ? `${nbh}, ${city}` : city || `ZIP ${zip}`;
+      const score = Math.round(rating * 10);
+      const grade = getGradeChip(score, 100);
+      const userRating = getAvgUserRating(zip);
+      const reviews    = getUserReviews(zip);
+
+      detailsContent.innerHTML = `
+        <div class="detail-section">
+          <div class="detail-section-title">Scores</div>
+          ${scoreBar('Overall',  rating, 10,  v => (Math.round(v*10)/10)+'/10')}
+          ${scoreBar('Transit',  ts,     100, v => Math.round(v)+'/100')}
+          ${scoreBar('Parks',    ps,     100, v => Math.round(v)+'/100')}
+          <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
+            ${grade} <span style="font-size:12px;color:var(--text-muted);"> neighborhood grade</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">Property & Economy</div>
+          ${val != null ? `<div class="detail-item"><span class="detail-label">Avg Home Value</span><span class="detail-value">$${val.toLocaleString()}</span></div>` : ''}
+          ${inc != null ? `<div class="detail-item"><span class="detail-label">Median Income</span><span class="detail-value">$${inc.toLocaleString()}</span></div>` : ''}
+          ${pop != null ? `<div class="detail-item"><span class="detail-label">Population</span><span class="detail-value">${Number(pop).toLocaleString()}</span></div>` : ''}
+          ${cri != null ? `<div class="detail-item"><span class="detail-label">Crime Rate/100</span><span class="detail-value">${cri.toFixed(1)}</span></div>` : ''}
+          ${vac != null ? `<div class="detail-item"><span class="detail-label">Vacancy Rate</span><span class="detail-value">${vac.toFixed(1)}%</span></div>` : ''}
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">Transit</div>
+          ${(() => {
+            const td = feature.getProperty('transit_data');
+            if (!td) return '<div style="font-size:12px;color:var(--text-muted);">Transit data unavailable</div>';
+            return `
+              <div class="detail-item"><span class="detail-label">Score</span><span class="detail-value">${td.score}/100 — ${td.label || ''}</span></div>
+              ${td.nearestStation ? `<div class="detail-item"><span class="detail-label">Nearest Station</span><span class="detail-value">${td.nearestStation} (${td.distance ? td.distance.toFixed(1)+' mi' : '?'})</span></div>` : ''}
+              ${td.recommendations ? `<div style="margin-top:8px;font-size:11px;color:var(--text-muted);line-height:1.5;">${td.recommendations}</div>` : ''}
+            `;
+          })()}
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">Parks & Green Space</div>
+          ${(() => {
+            const pd = feature.getProperty('parks_data');
+            if (!pd) return '<div style="font-size:12px;color:var(--text-muted);">Parks data unavailable</div>';
+            return `
+              <div class="detail-item"><span class="detail-label">Score</span><span class="detail-value">${pd.score}/100</span></div>
+              ${pd.nearestPark ? `<div class="detail-item"><span class="detail-label">Nearest Park</span><span class="detail-value">${pd.nearestPark}</span></div>` : ''}
+              ${pd.count != null ? `<div class="detail-item"><span class="detail-label">Parks within 1mi</span><span class="detail-value">${pd.count}</span></div>` : ''}
+            `;
+          })()}
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">Community Ratings ${userRating ? `· Avg ${userRating}/10` : ''}</div>
+          ${reviews.length > 0
+            ? reviews.slice(-3).map(r => `
+                <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px;margin-bottom:6px;font-size:12px;">
+                  <div style="color:#f59e0b;margin-bottom:3px;">${'★'.repeat(Math.round(r.rating))}${'☆'.repeat(10-Math.round(r.rating))}</div>
+                  ${r.comment ? `<div style="color:var(--text-muted);">${r.comment}</div>` : ''}
+                  <div style="color:var(--text-muted);font-size:10px;margin-top:2px;">${r.date}</div>
+                </div>`).join('')
+            : '<div style="font-size:12px;color:var(--text-muted);">No reviews yet — be the first!</div>'}
+          <div style="margin-top:12px;">
+            <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Rate this area:</div>
+            <div class="star-row" id="star-row-${zip}">
+              ${[1,2,3,4,5,6,7,8,9,10].map(n => `<button class="star-btn" data-val="${n}" onclick="document.getElementById('user-rating-input').value=${n};document.querySelectorAll('#star-row-${zip} .star-btn').forEach((b,i)=>b.classList.toggle('active',i<${n}))">★</button>`).join('')}
+            </div>
+            <input type="hidden" id="user-rating-input" value="">
+            <textarea id="user-comment" placeholder="Optional comment…"
+              style="width:100%;margin-top:8px;padding:8px;background:var(--bg-light);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;resize:none;height:60px;font-family:inherit;outline:none;"></textarea>
+            <button onclick="window.submitReview('${zip}')" class="btn-action" style="margin-top:6px;">
+              <i class="fa-solid fa-paper-plane"></i> Submit Review
+            </button>
+          </div>
+        </div>
+
+        <button class="zoom-out-btn" onclick="window.zoomOut()">
+          <i class="fa-solid fa-arrow-left"></i> Back to Overview
+        </button>
+      `;
+
+      detailsDrawer.classList.add('open');
+    }
+
+    map.data.addListener('click', event => {
+      if (event.domEvent.ctrlKey || event.domEvent.metaKey) {
+        addComparison(event.feature);
+        return;
+      }
+
+      if (currentClickedFeature) map.data.revertStyle(currentClickedFeature);
+      currentClickedFeature = event.feature;
+
+      map.data.overrideStyle(event.feature, {
+        fillOpacity: 0,
+        strokeWeight: 3,
+        strokeColor: '#0d9488'
+      });
+
+      const bounds = new google.maps.LatLngBounds();
+      event.feature.getGeometry().forEachLatLng(ll => bounds.extend(ll));
+      map.fitBounds(bounds);
+
+      openInfoCard(event.feature);
+    });
+
+    document.getElementById('info-cards-close').addEventListener('click', () => {
+      infoPanel.classList.remove('visible');
+      detailsDrawer.classList.remove('open');
+      if (currentClickedFeature) { map.data.revertStyle(currentClickedFeature); currentClickedFeature = null; }
+    });
+
+    document.getElementById('details-close').addEventListener('click', () => {
+      detailsDrawer.classList.remove('open');
+      infoPanel.classList.remove('visible');
+      if (currentClickedFeature) { map.data.revertStyle(currentClickedFeature); currentClickedFeature = null; }
+    });
+
+    document.getElementById('btn-zoom-out').addEventListener('click', () => window.zoomOut());
+
+    window.zoomOut = function() {
+      infoPanel.classList.remove('visible');
+      detailsDrawer.classList.remove('open');
+      if (currentClickedFeature) { map.data.revertStyle(currentClickedFeature); currentClickedFeature = null; }
+      map.setZoom(11);
+      map.setCenter({ lat: 33.75, lng: -84.39 });
+    };
+
+    // ── Comparison panel ─────────────────────────
+    let comparisonList = [];
+    const compPanel    = document.getElementById('comparison-panel');
+
+    function addComparison(feature) {
+      const zip = feature.getProperty('NAME');
+      if (comparisonList.some(x => x.zip === zip)) {
+        comparisonList = comparisonList.filter(x => x.zip !== zip);
+      } else if (comparisonList.length < 3) {
+        comparisonList.push({
+          zip,
+          rating:  calculateAreaRating(feature),
+          transit: feature.getProperty('transit_score') ?? 0,
+          parks:   feature.getProperty('parks_score')  ?? 0,
+          value:   feature.getProperty('avg_value')    ?? 0
+        });
+      } else {
+        showToast('Maximum 3 areas for comparison', 'warning');
+        return;
+      }
+      updateComparisonPanel();
+    }
+
+    function updateComparisonPanel() {
+      const list = document.getElementById('comparison-list');
+      if (comparisonList.length === 0) {
+        compPanel.style.display = 'none';
+        return;
+      }
+      compPanel.style.display = 'block';
+      list.innerHTML = comparisonList.map((item, idx) => `
+        <div class="comparison-item">
+          <div>
+            <div style="font-weight:700;font-size:13px;">ZIP ${item.zip}</div>
+            <div style="font-size:11px;color:var(--text-muted);">
+              ⭐ ${item.rating}/10 · 🚊 ${Math.round(item.transit)} · 🌳 ${Math.round(item.parks)}
+              ${item.value > 0 ? ' · $'+(item.value/1000).toFixed(0)+'k' : ''}
+            </div>
+          </div>
+          <button class="remove-btn" onclick="window.removeComparison(${idx})">×</button>
+        </div>`).join('');
+
+      // Best-of indicators when ≥2 areas
+      if (comparisonList.length >= 2) {
+        const best = {
+          rating:  Math.max(...comparisonList.map(x => x.rating)),
+          transit: Math.max(...comparisonList.map(x => x.transit)),
+          parks:   Math.max(...comparisonList.map(x => x.parks)),
+          value:   Math.max(...comparisonList.map(x => x.value))
+        };
+        document.getElementById('comparison-summary').innerHTML =
+          `<strong style="color:var(--cream);">Best overall:</strong> ZIP ${comparisonList.reduce((a,b) => a.rating > b.rating ? a : b).zip}`;
+      } else {
+        document.getElementById('comparison-summary').innerHTML = 'Ctrl+Click to add areas · Max 3';
+      }
+    }
+
+    document.getElementById('btn-add-compare').addEventListener('click', () => {
+      if (currentClickedFeature) addComparison(currentClickedFeature);
+    });
+
+    window.removeComparison = function(idx) {
+      comparisonList.splice(idx, 1);
+      updateComparisonPanel();
+    };
+
+    document.getElementById('comparison-clear').addEventListener('click', () => {
+      comparisonList = [];
+      updateComparisonPanel();
+    });
+
+    // ── Search ───────────────────────────────────
+    let selectedIdx = -1;
+    let searchMode  = 'zip';
+
+    const searchInput = document.getElementById('search-input');
+    const dropdown    = document.getElementById('autocomplete-dropdown');
+    const searchBtn   = document.getElementById('search-button');
+
+    document.getElementById('search-mode-zip').addEventListener('click', () => setSearchMode('zip'));
+    document.getElementById('search-mode-city').addEventListener('click', () => setSearchMode('city'));
+    document.getElementById('search-mode-neighborhood').addEventListener('click', () => setSearchMode('neighborhood'));
+
+    function setSearchMode(mode) {
+      searchMode = mode;
+      ['zip','city','neighborhood'].forEach(m => {
+        document.getElementById(`search-mode-${m}`).classList.toggle('active', m === mode);
+      });
+      const placeholders = {
+        zip:          'Search ZIP code…',
+        city:         'Search city…',
+        neighborhood: 'Search neighborhood…'
+      };
+      searchInput.placeholder = placeholders[mode];
+      searchInput.value = '';
+      dropdown.classList.remove('show');
+    }
+
+    function filteredResults(query) {
+      const q = query.toLowerCase();
+      return searchData.filter(item => {
+        if (searchMode === 'zip'          && item.type !== 'ZIP')          return false;
+        if (searchMode === 'city'         && item.type !== 'City')         return false;
+        if (searchMode === 'neighborhood' && item.type !== 'Neighborhood') return false;
+        return item.value.toLowerCase().includes(q);
+      }).slice(0, 8);
+    }
+
+    function highlight(text, q) {
+      const i = text.toLowerCase().indexOf(q.toLowerCase());
+      if (i === -1) return text;
+      return text.slice(0,i) + `<span class="autocomplete-highlight">${text.slice(i, i+q.length)}</span>` + text.slice(i+q.length);
+    }
+
+    function showDropdown(q) {
+      if (!q) { dropdown.classList.remove('show'); return; }
+      const matches = filteredResults(q);
+      if (!matches.length) { dropdown.classList.remove('show'); return; }
+      dropdown.innerHTML = matches.map((item, i) => `
+        <div class="autocomplete-item" data-index="${i}">
+          <span class="autocomplete-type">${item.type}</span>
+          <span>${highlight(item.value, q)}</span>
+        </div>`).join('');
+      dropdown.classList.add('show');
+      selectedIdx = -1;
+    }
+
+    function selectItem(item) {
+      searchInput.value = item.value;
+      dropdown.classList.remove('show');
+      const feats = item.type === 'ZIP' ? [item.feature] : (item.features || []);
+      if (!feats.length) return;
+
+      const bounds = new google.maps.LatLngBounds();
+      feats.forEach(f => {
+        f.getGeometry().forEachLatLng(ll => bounds.extend(ll));
+        map.data.overrideStyle(f, { fillOpacity: 0, strokeWeight: 3, strokeColor: '#0d9488' });
+      });
+      map.fitBounds(bounds);
+
+      if (searchMode === 'city' && feats.length > 1) {
+        showCityStats(item.value, feats);
+      } else if (feats.length === 1) {
+        openInfoCard(feats[0]);
+        if (currentClickedFeature) map.data.revertStyle(currentClickedFeature);
+        currentClickedFeature = feats[0];
+      }
+
+      setTimeout(() => feats.forEach(f => map.data.revertStyle(f)), 6000);
+    }
+
+    function showCityStats(cityName, feats) {
+      let sumPop=0,cPop=0, sumVal=0,cVal=0, sumInc=0,cInc=0, sumCrime=0,cCrime=0;
+      const zips = [];
+      feats.forEach(f => {
+        zips.push(f.getProperty('NAME'));
+        const p = f.getProperty('population');     if(p>0){sumPop+=p;cPop++;}
+        const v = f.getProperty('avg_value');       if(v>0){sumVal+=v;cVal++;}
+        const i = f.getProperty('median_income');  if(i>0){sumInc+=i;cInc++;}
+        const c = f.getProperty('crime_rate');     if(c>=0){sumCrime+=c;cCrime++;}
+      });
+      detailsTitle.textContent = `${cityName} — ${feats.length} ZIPs`;
+      detailsContent.innerHTML = `
+        <div class="detail-section">
+          <div class="detail-section-title">City Overview</div>
+          <div class="detail-item"><span class="detail-label">ZIP Codes</span><span class="detail-value">${zips.join(', ')}</span></div>
+          ${cPop   ? `<div class="detail-item"><span class="detail-label">Total Population</span><span class="detail-value">${Math.round(sumPop).toLocaleString()}</span></div>` : ''}
+          ${cVal   ? `<div class="detail-item"><span class="detail-label">Avg Home Value</span><span class="detail-value">$${Math.round(sumVal/cVal).toLocaleString()}</span></div>` : ''}
+          ${cInc   ? `<div class="detail-item"><span class="detail-label">Avg Median Income</span><span class="detail-value">$${Math.round(sumInc/cInc).toLocaleString()}</span></div>` : ''}
+          ${cCrime ? `<div class="detail-item"><span class="detail-label">Avg Crime/100</span><span class="detail-value">${(sumCrime/cCrime).toFixed(1)}</span></div>` : ''}
+        </div>`;
+      detailsDrawer.classList.add('open');
+    }
+
+    searchInput.addEventListener('input', e => showDropdown(e.target.value.trim()));
+    searchBtn.addEventListener('click',   () => {
+      const q = searchInput.value.trim();
+      if (!q) return;
+      const matches = filteredResults(q);
+      if (matches.length > 0) selectItem(matches[0]);
+    });
+
+    searchInput.addEventListener('keydown', e => {
+      const items = dropdown.querySelectorAll('.autocomplete-item');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIdx = Math.min(selectedIdx + 1, items.length - 1);
+        items.forEach((el, i) => el.classList.toggle('selected', i === selectedIdx));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIdx = Math.max(selectedIdx - 1, -1);
+        items.forEach((el, i) => el.classList.toggle('selected', i === selectedIdx));
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const q = searchInput.value.trim();
+        const matches = filteredResults(q);
+        const target  = selectedIdx >= 0 ? matches[selectedIdx] : matches[0];
+        if (target) selectItem(target);
+      } else if (e.key === 'Escape') {
+        dropdown.classList.remove('show');
+      }
+    });
+
+    dropdown.addEventListener('click', e => {
+      const el = e.target.closest('.autocomplete-item');
+      if (!el) return;
+      const idx = parseInt(el.dataset.index);
+      const matches = filteredResults(searchInput.value.trim());
+      if (matches[idx]) selectItem(matches[idx]);
+    });
+
+    document.addEventListener('click', e => {
+      if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.remove('show');
+      }
+    });
+
+    // ── Satellite toggle ─────────────────────────
+    document.getElementById('view-toggle').addEventListener('click', function() {
+      satelliteMode = !satelliteMode;
+      map.setMapTypeId(satelliteMode ? google.maps.MapTypeId.HYBRID : google.maps.MapTypeId.ROADMAP);
+      if (!satelliteMode) map.setOptions({ styles: isDark() ? darkStyle : lightStyle });
+      this.innerHTML = satelliteMode
+        ? '<i class="fa-solid fa-map"></i>'
+        : '<i class="fa-solid fa-satellite"></i>';
+      this.classList.toggle('active', satelliteMode);
+      this.title = satelliteMode ? 'Switch to road map' : 'Toggle satellite view';
+    });
+
+    // ── Transit-oriented highlight ───────────────
+    let transitOrientedActive = false;
+    document.getElementById('transit-oriented-btn').addEventListener('click', function() {
+      transitOrientedActive = !transitOrientedActive;
+      this.classList.toggle('active', transitOrientedActive);
+
+      if (transitOrientedActive) {
+        selectedField = 'transit_score';
+        document.getElementById('color-by-select').value = 'transit_score';
+        updateMapStyle();
+
+        let count = 0;
+        map.data.forEach(f => { if ((f.getProperty('transit_score') || 0) >= 70) count++; });
+
+        const banner = document.createElement('div');
+        banner.style.cssText = `
+          position:fixed; top:76px; left:50%; transform:translateX(-50%);
+          background:linear-gradient(135deg,#0d9488,#14b8a6);
+          color:white; padding:14px 24px; border-radius:12px;
+          font-family:Inter,sans-serif; font-weight:600; z-index:10000;
+          box-shadow:0 8px 32px rgba(0,0,0,.35);
+          animation:slideDown .3s ease-out;
+        `;
+        banner.innerHTML = `<i class="fa-solid fa-train-subway"></i> <strong>${count}</strong> transit-oriented areas (score ≥ 70)`;
+        document.body.appendChild(banner);
+        setTimeout(() => {
+          banner.style.animation = 'slideUp .3s ease-out';
+          setTimeout(() => banner.remove(), 300);
+        }, 4000);
+      } else {
+        selectedField = 'area_rating';
+        document.getElementById('color-by-select').value = 'area_rating';
+        updateMapStyle();
+      }
+    });
+
+    // ── Transit / parks markers ───────────────────
+    document.getElementById('show-transit').addEventListener('change', function() {
+      toggleTransitMarkers(this.checked);
+    });
+    document.getElementById('show-parks').addEventListener('change', function() {
+      toggleParksMarkers(this.checked);
+    });
+
+    function toggleTransitMarkers(show) {
+      if (!show) {
+        transitMarkers.forEach(m => m.setMap(null));
+        transitVisible = false;
+        return;
+      }
+      if (transitMarkers.length === 0) {
+        transitHelper.martaRailStations.forEach(station => {
+          const marker = new google.maps.Marker({
+            position: { lat: station.lat, lng: station.lng },
+            map,
+            title: `${station.name} (${station.line} Line)`,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 9,
+              fillColor: station.color,
+              fillOpacity: 0.95,
+              strokeColor: '#ffffff',
+              strokeWeight: 2
+            },
+            zIndex: 1000
+          });
+          const iw = new google.maps.InfoWindow({
+            content: `<div style="padding:10px;font-family:Inter,sans-serif;">
+              <strong style="font-size:14px;color:#1e293b;">${station.name}</strong>
+              <p style="margin:4px 0 0;color:#64748b;font-size:12px;">${station.line} Line</p>
+              <span style="display:inline-block;margin-top:6px;padding:2px 8px;background:${station.color};color:#fff;border-radius:4px;font-size:11px;">MARTA Rail</span>
+            </div>`
+          });
+          marker.addListener('click', () => iw.open(map, marker));
+          transitMarkers.push(marker);
+        });
+      } else {
+        transitMarkers.forEach(m => m.setMap(map));
+      }
+      transitVisible = true;
+    }
+
+    function toggleParksMarkers(show) {
+      if (!show) {
+        parksMarkers.forEach(m => m.setMap(null));
+        parksVisible = false;
+        return;
+      }
+      if (parksMarkers.length === 0) {
+        parksHelper.atlantaParks
+          .filter(p => p.acres >= 50 || p.type === 'State Park' || p.type === 'National Park')
+          .forEach(park => {
+            const marker = new google.maps.Marker({
+              position: { lat: park.lat, lng: park.lng },
+              map,
+              title: park.name,
+              icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: Math.min(13, 6 + Math.log(park.acres) * 0.6),
+                fillColor: '#10b981',
+                fillOpacity: 0.85,
+                strokeColor: '#ffffff',
+                strokeWeight: 2
+              },
+              zIndex: 900
+            });
+            const iw = new google.maps.InfoWindow({
+              content: `<div style="padding:10px;font-family:Inter,sans-serif;">
+                <strong style="font-size:14px;color:#1e293b;">${park.name}</strong>
+                <p style="margin:4px 0 0;color:#64748b;font-size:12px;">${park.type} · ${park.acres} acres</p>
+                ${park.amenities?.length ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;">${park.amenities.slice(0,4).map(a=>`<span style="padding:2px 6px;background:#d1fae5;color:#065f46;border-radius:4px;font-size:10px;">${a}</span>`).join('')}</div>` : ''}
+              </div>`
+            });
+            marker.addListener('click', () => iw.open(map, marker));
+            parksMarkers.push(marker);
+          });
+      } else {
+        parksMarkers.forEach(m => m.setMap(map));
+      }
+      parksVisible = true;
+    }
+
+    // Show by default
+    setTimeout(() => {
+      toggleTransitMarkers(true);
+      toggleParksMarkers(true);
+    }, 800);
+
+    // ── Enhanced features panel ───────────────────
+    document.getElementById('enhanced-btn').addEventListener('click', function() {
+      const panel = document.getElementById('enhanced-panel');
+      const open  = panel.style.display === 'none';
+      panel.style.display = open ? 'block' : 'none';
+      this.classList.toggle('active', open);
+    });
+    document.getElementById('enhanced-close').addEventListener('click', () => {
+      document.getElementById('enhanced-panel').style.display = 'none';
+      document.getElementById('enhanced-btn').classList.remove('active');
+    });
+
+    // ── Phase 2 features ──────────────────────────
+    let phase2 = null;
+    let bikeMarkers = [], bikeVisible = false;
+    let weatherEl = null;
+
+    if (typeof Phase2Features !== 'undefined') {
+      phase2 = new Phase2Features(map);
+    }
+
+    window.toggleBikeShare = async function() {
+      if (!phase2) { showToast('Phase 2 features not loaded', 'error'); return; }
+      if (bikeVisible) {
+        bikeMarkers.forEach(m => m.setMap(null));
+        bikeMarkers = []; bikeVisible = false;
+        showToast('<i class="fa-solid fa-bicycle"></i> Bike stations hidden');
+        return;
+      }
+      const stations = await phase2.loadBikeShareData();
+      stations.forEach(s => {
+        const pct  = (s.bikes / s.docks) * 100;
+        const fill = pct > 60 ? '#10b981' : pct > 30 ? '#f59e0b' : '#ef4444';
+        const m = new google.maps.Marker({
+          position: { lat: s.lat, lng: s.lng }, map,
+          title: s.name,
+          icon: { path: google.maps.SymbolPath.CIRCLE, scale: 11, fillColor: fill, fillOpacity: .9, strokeColor:'#fff', strokeWeight:2 }
+        });
+        const iw = new google.maps.InfoWindow({ content: `<div style="padding:10px;font-family:Inter,sans-serif;min-width:180px;"><strong>${s.name}</strong><br><span style="color:#0284c7;">${s.bikes} bikes</span> · <span style="color:#64748b;">${s.docks - s.bikes} docks free</span></div>` });
+        m.addListener('click', () => iw.open(map, m));
+        bikeMarkers.push(m);
+      });
+      bikeVisible = true;
+      showToast(`<i class="fa-solid fa-bicycle"></i> ${stations.length} bike stations shown`, 'success');
+    };
+
+    window.toggleWeatherWidget = async function() {
+      if (!phase2) { showToast('Phase 2 features not loaded', 'error'); return; }
+      if (weatherEl) {
+        weatherEl.remove(); weatherEl = null;
+        showToast('Weather widget hidden');
+        return;
+      }
+      const w = await phase2.fetchWeatherData();
+      const icons = { Sunny:'fa-sun', 'Partly Cloudy':'fa-cloud-sun', Cloudy:'fa-cloud', Rainy:'fa-cloud-rain' };
+      const icon  = icons[w.condition] || 'fa-cloud-sun';
+      weatherEl = document.createElement('div');
+      weatherEl.style.cssText = `position:fixed;top:76px;left:20px;background:var(--bg-solid);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;color:var(--text);box-shadow:var(--shadow-lg);min-width:190px;z-index:500;`;
+      weatherEl.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:13px;font-weight:700;">Atlanta Weather</span>
+          <i class="fa-solid ${icon}" style="font-size:20px;color:var(--cream);"></i>
+        </div>
+        <div style="font-size:32px;font-weight:800;margin:8px 0;">${w.temp}°F</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.7;">
+          ${w.condition}<br>Feels like ${w.feelsLike}°F<br>
+          Humidity ${w.humidity}% · Wind ${w.windSpeed}mph · UV ${w.uvIndex}
+        </div>
+        <div style="margin-top:10px;padding:8px;background:rgba(13,148,136,.1);border-radius:6px;font-size:11px;color:var(--text-muted);">${w.recommendation}</div>
+      `;
+      document.body.appendChild(weatherEl);
+      showToast('<i class="fa-solid fa-cloud-sun"></i> Weather widget shown', 'success');
+    };
+
+    window.enableRealTimeTransit = function() {
+      if (!phase2) { showToast('Phase 2 features not loaded', 'error'); return; }
+      phase2.initRealTimeTransit();
+      showToast('<i class="fa-solid fa-bolt"></i> Real-time transit tracking enabled', 'success');
+    };
+
+    window.showCarbonCalculator = function() {
+      const existing = document.getElementById('carbon-modal');
+      if (existing) { existing.remove(); return; }
+      const modal = document.createElement('div');
+      modal.id = 'carbon-modal';
+      modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:10000;display:flex;align-items:center;justify-content:center;`;
+      modal.innerHTML = `
+        <div style="background:var(--bg-solid);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:440px;width:90%;box-shadow:var(--shadow-lg);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+            <h3 style="margin:0;color:var(--text);font-size:18px;"><i class="fa-solid fa-leaf" style="color:#22c55e;"></i> Carbon Calculator</h3>
+            <button onclick="document.getElementById('carbon-modal').remove()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;">&times;</button>
+          </div>
+          <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text-muted);">Distance (miles)</label>
+          <input type="number" id="carbon-dist" value="5" style="width:100%;padding:10px;background:var(--bg-light);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);margin-bottom:12px;">
+          <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text-muted);">Transport Mode</label>
+          <select id="carbon-mode" style="width:100%;padding:10px;background:var(--bg-light);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);margin-bottom:14px;">
+            <option value="transit">Public Transit</option>
+            <option value="bike">Bike</option>
+            <option value="walk">Walk</option>
+          </select>
+          <button onclick="
+            if(!window._p2)window._p2=new Phase2Features(null);
+            const r=window._p2.calculateTransitCarbonSavings(+document.getElementById('carbon-dist').value,document.getElementById('carbon-mode').value);
+            document.getElementById('carbon-result').innerHTML='<strong style=color:#22c55e>'+r.savings+' kg CO₂ saved · '+r.treesEquivalent+' tree-days</strong>';
+            document.getElementById('carbon-result').style.display='block';"
+            style="width:100%;padding:10px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;color:#fff;border-radius:var(--radius-sm);font-weight:700;cursor:pointer;">
+            Calculate Savings
+          </button>
+          <div id="carbon-result" style="display:none;margin-top:14px;padding:12px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:var(--radius-sm);font-size:14px;text-align:center;"></div>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    };
+
+    // Investment heatmap — highlights top-value ZIPs
+    let heatmapActive = false;
+    window.showHeatmap = function() {
+      heatmapActive = !heatmapActive;
+      if (heatmapActive) {
+        const vals = [];
+        map.data.forEach(f => { const v = f.getProperty('avg_value'); if(v>0) vals.push(v); });
+        vals.sort((a,b) => b-a);
+        const top20pct = vals[Math.floor(vals.length * 0.2)] || 0;
+
+        map.data.setStyle(feature => {
+          const v = feature.getProperty('avg_value') || 0;
+          const isTop = v >= top20pct && v > 0;
+          return {
+            fillColor:   isTop ? '#f59e0b' : '#374151',
+            strokeWeight: isTop ? 2 : 0.5,
+            strokeColor: isTop ? '#fbbf24' : '#1e293b',
+            fillOpacity: isTop ? 0.82 : 0.15
+          };
+        });
+        showToast('<i class="fa-solid fa-fire" style="color:#f97316;"></i> Showing top 20% investment areas', 'success');
+      } else {
+        updateMapStyle();
+        showToast('Investment heatmap hidden');
+      }
+    };
+
+    // ── Keyboard shortcuts ────────────────────────
+    const hints = document.getElementById('keyboard-hints');
+    setTimeout(() => { hints.classList.add('show'); }, 1500);
+    setTimeout(() => { hints.classList.remove('show'); }, 6000);
+
+    document.addEventListener('keydown', e => {
+      if (e.key === '?')      hints.classList.toggle('show');
+      if (e.key === 'Escape') {
+        hints.classList.remove('show');
+        infoPanel.classList.remove('visible');
+        detailsDrawer.classList.remove('open');
+        dropdown.classList.remove('show');
+        if (currentClickedFeature) { map.data.revertStyle(currentClickedFeature); currentClickedFeature = null; }
+      }
+      // Ctrl+K → focus search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+      }
+    });
+  } // end initMap
+  </script>
+
+  <!-- ================================================
+       GOOGLE MAPS LOADER
+       ================================================ -->
+  <script>
+    window.addEventListener('DOMContentLoaded', async function() {
+      let retries = 0;
+      while (typeof getAPIKey !== 'function' && retries < 20) {
+        await new Promise(r => setTimeout(r, 100));
+        retries++;
+      }
+      if (typeof getAPIKey !== 'function') {
+        console.error('getAPIKey not available');
+        document.getElementById('loading-bar').style.background = '#ef4444';
+        document.getElementById('loading-bar').style.width = '100%';
+        return;
+      }
+      try {
+        const apiKey = await getAPIKey('google_maps');
+        const s = document.createElement('script');
+        s.defer = true;
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&callback=initMap&libraries=places`;
+        s.onerror = () => {
+          document.getElementById('loading-bar').style.background = '#ef4444';
+          console.error('Google Maps script failed to load');
+        };
+        document.head.appendChild(s);
+      } catch (err) {
+        console.error('Failed to load Google Maps API:', err);
+        document.getElementById('loading-bar').style.background = '#ef4444';
+        document.getElementById('loading-bar').style.width = '100%';
+      }
+    });
+  </script>
+</body>
+</html>

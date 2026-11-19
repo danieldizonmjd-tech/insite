@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InSite - Lifestyle S3 Integration Verification</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #2C2C2C 0%, #1a1a1a 100%);
+      color: #fff;
+      padding: 2rem;
+      line-height: 1.6;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { 
+      font-size: 2.5rem; 
+      margin-bottom: 1rem; 
+      background: linear-gradient(135deg, #F5F5DC, #FFFDD0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .status-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 253, 208, 0.2);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .test-item {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 1rem;
+      border-radius: 8px;
+      border-left: 4px solid #666;
+    }
+    .test-item.success { border-left-color: #10b981; }
+    .test-item.error { border-left-color: #ef4444; }
+    .test-item.pending { border-left-color: #f59e0b; }
+    .icon { margin-right: 0.5rem; }
+    .success-icon { color: #10b981; }
+    .error-icon { color: #ef4444; }
+    .pending-icon { color: #f59e0b; }
+    code {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+    }
+    .data-preview {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      overflow-x: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    button {
+      background: linear-gradient(135deg, #F5F5DC 0%, #FFFDD0 50%, #FFFFF0 100%);
+      color: #2C2C2C;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: all 0.3s ease;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(255, 253, 208, 0.3);
+    }
+    .score-display {
+      display: inline-block;
+      background: rgba(255, 253, 208, 0.1);
+      padding: 0.3rem 0.8rem;
+      border-radius: 6px;
+      margin: 0.2rem;
+      border: 1px solid rgba(255, 253, 208, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Lifestyle Tab S3 Integration Verification</h1>
+    
+    <div class="status-card">
+      <h2>📊 Test Overview</h2>
+      <p>This page verifies that the Lifestyle tab is fully connected to AWS S3 data and all scoring/matching functions work correctly.</p>
+    </div>
+
+    <div class="status-grid" id="testResults">
+      <div class="test-item pending">
+        <span class="icon pending-icon">⏳</span>
+        <strong>Test 1:</strong> S3 Connection
+        <div id="test1"></div>
+      </div>
+      <div class="test-item pending">
+        <span class="icon pending-icon">⏳</span>
+        <strong>Test 2:</strong> Data Processing
+        <div id="test2"></div>
+      </div>
+      <div class="test-item pending">
+        <span class="icon pending-icon">⏳</span>
+        <strong>Test 3:</strong> Score Calculation
+        <div id="test3"></div>
+      </div>
+      <div class="test-item pending">
+        <span class="icon pending-icon">⏳</span>
+        <strong>Test 4:</strong> Matching Algorithm
+        <div id="test4"></div>
+      </div>
+      <div class="test-item pending">
+        <span class="icon pending-icon">⏳</span>
+        <strong>Test 5:</strong> Preset Functions
+        <div id="test5"></div>
+      </div>
+      <div class="test-item pending">
+        <span class="icon pending-icon">⏳</span>
+        <strong>Test 6:</strong> Data Completeness
+        <div id="test6"></div>
+      </div>
+    </div>
+
+    <button onclick="runAllTests()">▶ Run All Tests</button>
+
+    <div class="data-preview" id="dataPreview"></div>
+  </div>
+
+  <script src="aws-s3-config.js"></script>
+  <script>
+    let zipData = {};
+    let allZipCodes = [];
+    let testsPassed = 0;
+    let totalTests = 6;
+
+    function updateTestStatus(testNum, status, message) {
+      const testDiv = document.getElementById(`test${testNum}`);
+      const testItem = testDiv.parentElement;
+      
+      testItem.className = `test-item ${status}`;
+      const icon = testItem.querySelector('.icon');
+      
+      if (status === 'success') {
+        icon.className = 'icon success-icon';
+        icon.textContent = '✅';
+        testsPassed++;
+      } else if (status === 'error') {
+        icon.className = 'icon error-icon';
+        icon.textContent = '❌';
+      } else {
+        icon.className = 'icon pending-icon';
+        icon.textContent = '⏳';
+      }
+      
+      testDiv.innerHTML = message;
+    }
+
+    async function runAllTests() {
+      testsPassed = 0;
+      document.getElementById('dataPreview').innerHTML = '<strong>Running tests...</strong>';
+      
+      try {
+        // Test 1: S3 Connection
+        updateTestStatus(1, 'pending', 'Connecting to AWS S3...');
+        const startTime = Date.now();
+        const geoData = await INSITE_S3_CONFIG.loadGeoJson(INSITE_S3_CONFIG.ZIP_CODES.USPS_CLEAN);
+        const loadTime = Date.now() - startTime;
+        
+        if (geoData && geoData.features && geoData.features.length > 0) {
+          updateTestStatus(1, 'success', `Connected! Loaded in ${loadTime}ms`);
+        } else {
+          updateTestStatus(1, 'error', 'Failed to load data from S3');
+          return;
+        }
+
+        // Test 2: Data Processing
+        updateTestStatus(2, 'pending', 'Processing GeoJSON data...');
+        processGeoData(geoData);
+        
+        if (Object.keys(zipData).length > 0 && allZipCodes.length > 0) {
+          updateTestStatus(2, 'success', `Processed ${allZipCodes.length} ZIP codes`);
+        } else {
+          updateTestStatus(2, 'error', 'Failed to process data');
+          return;
+        }
+
+        // Test 3: Score Calculation
+        updateTestStatus(3, 'pending', 'Testing score calculation...');
+        const testZip = allZipCodes[0];
+        const scores = calculateZipScores(testZip);
+        
+        if (scores && scores.affordability !== undefined && scores.income !== undefined) {
+          const scoresList = Object.entries(scores).map(([k, v]) => `${k}: ${v}`).join(', ');
+          updateTestStatus(3, 'success', `Calculated scores for ${testZip}: ${scoresList}`);
+        } else {
+          updateTestStatus(3, 'error', 'Score calculation failed');
+          return;
+        }
+
+        // Test 4: Matching Algorithm
+        updateTestStatus(4, 'pending', 'Testing matching algorithm...');
+        const matches = findLifestyleMatchesTest();
+        
+        if (matches && matches.length > 0) {
+          updateTestStatus(4, 'success', `Found ${matches.length} matches with average score ${Math.round(matches.reduce((a, b) => a + b.overallScore, 0) / matches.length)}`);
+        } else {
+          updateTestStatus(4, 'error', 'Matching algorithm failed');
+          return;
+        }
+
+        // Test 5: Preset Functions
+        updateTestStatus(5, 'pending', 'Testing preset configurations...');
+        const presets = ['family', 'young-prof', 'retiree', 'investor'];
+        const presetResults = presets.map(p => testPreset(p));
+        
+        if (presetResults.every(r => r > 0)) {
+          updateTestStatus(5, 'success', `All 4 presets working (${presetResults.join(', ')} matches each)`);
+        } else {
+          updateTestStatus(5, 'error', 'Some presets failed');
+          return;
+        }
+
+        // Test 6: Data Completeness
+        updateTestStatus(6, 'pending', 'Checking data completeness...');
+        const dataQuality = checkDataQuality();
+        
+        if (dataQuality.complete > 0.8) {
+          updateTestStatus(6, 'success', `Data is ${Math.round(dataQuality.complete * 100)}% complete (${dataQuality.validZips}/${allZipCodes.length} ZIPs have all required fields)`);
+        } else {
+          updateTestStatus(6, 'error', `Data completeness too low: ${Math.round(dataQuality.complete * 100)}%`);
+          return;
+        }
+
+        // Display results
+        displayResults(geoData, scores, matches);
+
+      } catch (error) {
+        console.error('Test failed:', error);
+        document.getElementById('dataPreview').innerHTML = `<strong style="color: #ef4444;">❌ Error: ${error.message}</strong>`;
+      }
+    }
+
+    function processGeoData(geoData) {
+      zipData = {};
+      allZipCodes = [];
+      
+      geoData.features.forEach(f => {
+        const zip = f.properties.NAME || f.properties.zip || f.properties.ZCTA5CE10;
+        if (zip) {
+          zipData[zip] = {
+            zip: zip,
+            avg_value: f.properties.avg_value || 0,
+            population: f.properties.population || 0,
+            median_income: f.properties.median_income || 0,
+            crime_rate: f.properties.crime_rate || 0,
+            housing_vacancy_rate: f.properties.housing_vacancy_rate || 0,
+            city: f.properties.city || "Atlanta Metro",
+            neighborhood: f.properties.neighborhood || `Area ${zip}`
+          };
+          allZipCodes.push(zip);
+        }
+      });
+    }
+
+    function calculateZipScores(zipCode) {
+      const data = zipData[zipCode];
+      if (!data) return null;
+
+      const getPercentileScore = (value, metric, higherIsBetter = true) => {
+        const allValues = allZipCodes.map(z => zipData[z][metric]).filter(v => v != null && v > 0).sort((a, b) => a - b);
+        if (allValues.length === 0) return 50;
+        const rank = allValues.filter(v => v <= value).length;
+        const percentile = Math.round((rank / allValues.length) * 100);
+        return higherIsBetter ? percentile : (100 - percentile);
+      };
+
+      return {
+        affordability: Math.max(0, Math.min(100, getPercentileScore(data.avg_value, 'avg_value', false))),
+        income: Math.max(0, Math.min(100, getPercentileScore(data.median_income, 'median_income', true))),
+        safety: Math.max(0, Math.min(100, getPercentileScore(data.crime_rate, 'crime_rate', false))),
+        occupancy: Math.max(0, Math.min(100, Math.round(100 - (data.housing_vacancy_rate * 10)))),
+        investment: Math.max(0, Math.min(100, Math.round((getPercentileScore(data.avg_value, 'avg_value', true) * 0.5) + (getPercentileScore(data.population, 'population', true) * 0.3) + ((100 - Math.min(100, data.housing_vacancy_rate * 10)) * 0.2))))
+      };
+    }
+
+    function findLifestyleMatchesTest() {
+      const preferences = {
+        affordability: { enabled: true, minScore: 50 },
+        safety: { enabled: true, minScore: 50 },
+        income: { enabled: true, minScore: 50 },
+        occupancy: { enabled: true, minScore: 50 },
+        investment: { enabled: true, minScore: 50 }
+      };
+
+      return allZipCodes.filter(zipCode => {
+        const scores = calculateZipScores(zipCode);
+        if (!scores) return false;
+        for (const [pref, settings] of Object.entries(preferences)) {
+          if (settings.enabled && scores[pref] < settings.minScore) {
+            return false;
+          }
+        }
+        return true;
+      }).map(zipCode => {
+        const scores = calculateZipScores(zipCode);
+        const data = zipData[zipCode];
+        const enabledScores = Object.values(scores);
+        const overallScore = Math.round(enabledScores.reduce((a, b) => a + b, 0) / enabledScores.length);
+        return { zipCode, data, scores, overallScore };
+      }).sort((a, b) => b.overallScore - a.overallScore).slice(0, 12);
+    }
+
+    function testPreset(presetType) {
+      const presetConfigs = {
+        'family': { affordability: 70, safety: 80, income: 0, occupancy: 85, investment: 0 },
+        'young-prof': { affordability: 60, safety: 65, income: 70, occupancy: 90, investment: 70 },
+        'retiree': { affordability: 80, safety: 85, income: 0, occupancy: 80, investment: 0 },
+        'investor': { affordability: 0, safety: 60, income: 65, occupancy: 90, investment: 80 }
+      };
+
+      const config = presetConfigs[presetType];
+      const matches = allZipCodes.filter(zipCode => {
+        const scores = calculateZipScores(zipCode);
+        if (!scores) return false;
+        return (config.affordability === 0 || scores.affordability >= config.affordability) &&
+               (config.safety === 0 || scores.safety >= config.safety) &&
+               (config.income === 0 || scores.income >= config.income) &&
+               (config.occupancy === 0 || scores.occupancy >= config.occupancy) &&
+               (config.investment === 0 || scores.investment >= config.investment);
+      });
+      return matches.length;
+    }
+
+    function checkDataQuality() {
+      let validZips = 0;
+      allZipCodes.forEach(zip => {
+        const data = zipData[zip];
+        if (data.avg_value > 0 && data.population > 0 && data.median_income > 0) {
+          validZips++;
+        }
+      });
+      return {
+        validZips,
+        total: allZipCodes.length,
+        complete: validZips / allZipCodes.length
+      };
+    }
+
+    function displayResults(geoData, sampleScores, matches) {
+      const html = `
+        <h3 style="color: #10b981; margin-bottom: 1rem;">✅ All Tests Passed (${testsPassed}/${totalTests})</h3>
+        
+        <h4>📦 Data Source</h4>
+        <div style="margin-left: 1rem; margin-bottom: 1rem;">
+          <div>Bucket: <code>${INSITE_S3_CONFIG.BUCKET_URL}</code></div>
+          <div>File: <code>${INSITE_S3_CONFIG.ZIP_CODES.USPS_CLEAN}</code></div>
+          <div>Features: <code>${geoData.features.length}</code></div>
+          <div>Processed ZIPs: <code>${allZipCodes.length}</code></div>
+        </div>
+
+        <h4>🎯 Sample Scores (${allZipCodes[0]})</h4>
+        <div style="margin-left: 1rem; margin-bottom: 1rem;">
+          ${Object.entries(sampleScores).map(([k, v]) => `
+            <span class="score-display">
+              ${k}: <strong style="color: ${v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#ef4444'}">${v}</strong>
+            </span>
+          `).join('')}
+        </div>
+
+        <h4>🏆 Top Matches (Test Query)</h4>
+        <div style="margin-left: 1rem;">
+          ${matches.slice(0, 5).map(m => `
+            <div style="margin-bottom: 0.5rem;">
+              <strong>${m.zipCode}</strong> - ${m.data.city} 
+              <span class="score-display">Score: <strong style="color: #10b981">${m.overallScore}</strong></span>
+            </div>
+          `).join('')}
+        </div>
+
+        <h4 style="margin-top: 2rem;">📊 Data Sample (${allZipCodes[0]})</h4>
+        <pre style="background: rgba(0,0,0,0.5); padding: 1rem; border-radius: 8px; overflow-x: auto;">${JSON.stringify(zipData[allZipCodes[0]], null, 2)}</pre>
+      `;
+      document.getElementById('dataPreview').innerHTML = html;
+    }
+  </script>
+</body>
+</html>

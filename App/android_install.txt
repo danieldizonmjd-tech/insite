@@ -1,0 +1,5 @@
+adb devices
+
+adb uninstall com.systelli.insite
+
+adb install "/Users/ilyessmoudden/Documents/Systelli V3/Insite/android/app/build/outputs/apk/debug/app-debug.apk"

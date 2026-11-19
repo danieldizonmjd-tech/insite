@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>API Debug</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #0f0; }
+    .test { margin: 20px 0; padding: 15px; background: #2a2a2a; border-radius: 5px; }
+    .success { color: #0f0; }
+    .error { color: #f00; }
+    button { padding: 10px 20px; margin: 10px 0; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>API Configuration Debug</h1>
+  
+  <div class="test">
+    <h3>Test 1: Direct PHP Call</h3>
+    <button onclick="testDirectPHP()">Test Direct PHP</button>
+    <pre id="result1"></pre>
+  </div>
+  
+  <div class="test">
+    <h3>Test 2: Using getAPIKey('GOOGLE_MAPS_API_KEY')</h3>
+    <button onclick="testGetAPIKey()">Test getAPIKey</button>
+    <pre id="result2"></pre>
+  </div>
+  
+  <div class="test">
+    <h3>Test 3: Check Local Config</h3>
+    <button onclick="checkLocalConfig()">Check Config</button>
+    <pre id="result3"></pre>
+  </div>
+  
+  <script src="api-config.js?v=4"></script>
+  
+  <script>
+    async function testDirectPHP() {
+      const result = document.getElementById('result1');
+      result.innerHTML = 'Testing...';
+      
+      try {
+        const url = 'http://localhost:8000/access_api_keys.php?key=GOOGLE_MAPS_API_KEY';
+        console.log('Testing URL:', url);
+        
+        const response = await fetch(url);
+        const text = await response.text();
+        
+        result.innerHTML = `Status: ${response.status}\n\nResponse:\n${text}`;
+        result.className = response.ok ? 'success' : 'error';
+      } catch (error) {
+        result.innerHTML = `Error: ${error.message}`;
+        result.className = 'error';
+      }
+    }
+    
+    async function testGetAPIKey() {
+      const result = document.getElementById('result2');
+      result.innerHTML = 'Testing...';
+      
+      try {
+        console.log('Calling getAPIKey("GOOGLE_MAPS_API_KEY")...');
+        const key = await getAPIKey('GOOGLE_MAPS_API_KEY');
+        
+        result.innerHTML = `Success!\n\nAPI Key: ${key.substring(0, 15)}...\nLength: ${key.length}`;
+        result.className = 'success';
+      } catch (error) {
+        result.innerHTML = `Error: ${error.message}\n\nStack:\n${error.stack}`;
+        result.className = 'error';
+      }
+    }
+    
+    async function checkLocalConfig() {
+      const result = document.getElementById('result3');
+      result.innerHTML = 'Testing...';
+      
+      try {
+        // Try different key names
+        const tests = [
+          'GOOGLE_MAPS_API_KEY',
+          'google_maps_api_key', 
+          'google_maps',
+          'GOOGLE_MAPS'
+        ];
+        
+        let results = '';
+        for (const keyName of tests) {
+          const url = `http://localhost:8000/access_api_keys.php?key=${keyName}`;
+          const response = await fetch(url);
+          const data = await response.json();
+          
+          results += `\n${keyName}: `;
+          if (response.ok && data.api_key) {
+            results += `✓ Found (${data.api_key.substring(0, 10)}...)`;
+          } else {
+            results += `✗ ${data.error || 'Not found'}`;
+          }
+        }
+        
+        result.innerHTML = results;
+        result.className = 'success';
+      } catch (error) {
+        result.innerHTML = `Error: ${error.message}`;
+        result.className = 'error';
+      }
+    }
+  </script>
+</body>
+</html>

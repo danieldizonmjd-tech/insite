@@ -1,0 +1,21 @@
+{
+  "appId": "com.systelli.insite",
+  "appName": "Insite",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0a0e27",
+      "showSpinner": false,
+      "androidSpinnerStyle": "small",
+      "spinnerColor": "#8b5cf6"
+    },
+    "StatusBar": {
+      "style": "dark",
+      "backgroundColor": "#0a0e27"
+    }
+  }
+}

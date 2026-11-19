@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InSite - Interactive Map</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Leaflet Heatmap Plugin -->
+    <script src="https://cdn.jsdelivr.net/gh/Leaflet/Leaflet.heat@gh-pages/dist/leaflet-heat.js"></script>
+    
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #6366f1;
+            --secondary: #0ea5e9;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-glass: rgba(15, 23, 42, 0.85);
+            --border-glass: rgba(255, 255, 255, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            background: #0a0e1a;
+        }
+        
+        #map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+        }
+
+        /* Collapsible Feature Panel */
+        .feature-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .toggle-btn {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(79, 70, 229, 0.3);
+            border-color: var(--primary);
+        }
+
+        .feature-panel {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            padding: 20px;
+            z-index: 1000;
+            max-width: 360px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+            transform: translateX(420px);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .feature-panel.open {
+            transform: translateX(0);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, var(--primary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .close-btn:hover {
+            opacity: 1;
+        }
+
+        .feature-category {
+            margin-bottom: 24px;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary-light);
+            margin-bottom: 12px;
+            padding: 8px 0;
+            border-bottom: 2px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            margin: 6px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .feature-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .feature-item.active {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.3), rgba(99, 102, 241, 0.2));
+            border-color: var(--primary);
+        }
+
+        .feature-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .feature-icon {
+            font-size: 18px;
+        }
+
+        .feature-toggle-switch {
+            width: 44px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            position: relative;
+            transition: background 0.3s;
+        }
+
+        .feature-toggle-switch.active {
+            background: var(--primary);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.3s;
+        }
+
+        .feature-toggle-switch.active .toggle-slider {
+            transform: translateX(20px);
+        }
+
+        .badge {
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            color: white;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 8px;
+        }
+
+        /* Search Bar */
+        .search-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-box {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 12px 20px;
+            color: white;
+            font-size: 14px;
+            width: 320px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 8px 32px rgba(79, 70, 229, 0.3);
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(79, 70, 229, 0.4);
+        }
+
+        /* Notification System */
+        .notification {
+            position: fixed;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-120px);
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes slideDown {
+            to {
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .notification.success {
+            border-color: var(--success);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), var(--bg-glass));
+        }
+
+        .notification.error {
+            border-color: var(--danger);
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), var(--bg-glass));
+        }
+
+        .notification.info {
+            border-color: var(--secondary);
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), var(--bg-glass));
+        }
+
+        /* Loading Spinner */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            padding: 30px 40px;
+            border-radius: 16px;
+            border: 1px solid var(--border-glass);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            text-align: center;
+            color: white;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Legend */
+        .map-legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 16px;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            max-width: 250px;
+        }
+
+        .legend-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Scrollbar */
+        .feature-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .feature-panel::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .feature-panel::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .feature-panel {
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+
+            .search-container {
+                flex-direction: column;
+                width: calc(100% - 40px);
+            }
+
+            .search-box {
+                width: 100%;
+            }
+        }
+
+        /* Right-side vertical navbar (copied/adapted from index.html styles) */
+        .vertical-nav {
+            position: fixed;
+            right: 20px;
+            top: 80px;
+            z-index: 1100;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+            pointer-events: auto;
+        }
+
+        .vertical-nav .nav-panel {
+            background: var(--bg-glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glass);
+            border-radius: 14px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.45);
+            min-width: 54px;
+        }
+
+        .vertical-nav img.nav-logo {
+            width: 40px;
+            height: auto;
+            border-radius: 6px;
+            display: block;
+        }
+
+        .vertical-nav .icon-btn {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .vertical-nav .icon-btn:hover { transform: translateY(-4px); box-shadow: 0 12px 36px rgba(79,70,229,0.28); }
+
+        .vertical-nav .nav-search {
+            width: 220px;
+            display: none;
+        }
+
+        @media (max-width: 900px) {
+            .vertical-nav { right: 12px; top: 70px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Right-side Vertical Navbar (uses index.html styling) -->
+    <div class="vertical-nav" aria-hidden="false">
+        <div class="nav-panel" role="navigation" aria-label="Main map controls">
+            <div id="nav-logo">
+                <img src="insite_new_logo_transparent.png" class="nav-logo" alt="InSite logo">
+            </div>
+            <button id="enhanced-features-btn" class="icon-btn" title="Enhanced Features" onclick="toggleFeaturePanel()">
+                <i class="fa-solid fa-sparkles"></i>
+            </button>
+            <button id="transit-oriented-btn" class="icon-btn" title="Transit-Oriented" onclick="toggleFeaturePanel()">
+                <i class="fa-solid fa-train-subway"></i>
+            </button>
+            <button id="view-toggle" class="icon-btn" title="Toggle Map View" onclick="(function(){ alert('Toggle view not implemented'); })()">
+                <i class="fa-solid fa-map"></i>
+            </button>
+            <button id="filter-toggle" class="icon-btn" title="Filters" onclick="toggleFeaturePanel()">
+                <i class="fa-solid fa-sliders"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Search Bar -->
+    <div class="search-container">
+        <input type="text" class="search-box" id="searchInput" placeholder="🔍 Search for parks, transit stops, or addresses...">
+        <button class="search-btn" onclick="performSearch()">Search</button>
+    </div>
+    
+    <!-- Feature Toggle Button -->
+    <div class="feature-toggle">
+        <button class="toggle-btn" onclick="toggleFeaturePanel()">
+            <span>✨</span>
+            <span id="toggleText">Show Features</span>
+        </button>
+    </div>
+    
+    <!-- Feature Panel -->
+    <div class="feature-panel" id="featurePanel">
+        <div class="panel-header">
+            <h3 class="panel-title">🗺️ Enhanced Features</h3>
+            <button class="close-btn" onclick="toggleFeaturePanel()">×</button>
+        </div>
+        
+        <!-- Transit Features -->
+        <div class="feature-category">
+            <div class="category-header">
+                <span>🚇</span>
+                <span>Transit Features</span>
+            </div>
+            <div class="feature-item" onclick="toggleFeature('transit-stops')">
+                <div class="feature-label">
+                    <span class="feature-icon">📍</span>
+                    <span>Multi-Agency Stops</span>
+                    <span class="badge">Live</span>
+                </div>
+                <div class="feature-toggle-switch" id="toggle-transit-stops">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+            <div class="feature-item" onclick="toggleFeature('park-ride')">
+                <div class="feature-label">
+                    <span class="feature-icon">🅿️</span>
+                    <span>Park & Ride</span>
+                </div>
+                <div class="feature-toggle-switch" id="toggle-park-ride">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+            <div class="feature-item" onclick="toggleFeature('accessibility-heatmap')">
+                <div class="feature-label">
+                    <span class="feature-icon">🗺️</span>
+                    <span>Accessibility Heatmap</span>
+                </div>
+                <div class="feature-toggle-switch" id="toggle-accessibility-heatmap">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+            <div class="feature-item" onclick="toggleFeature('real-time-transit')">
+                <div class="feature-label">
+                    <span class="feature-icon">⚡</span>
+                    <span>Real-Time Arrivals</span>
+                    <span class="badge">Phase 2</span>
+                </div>
+                <div class="feature-toggle-switch" id="toggle-real-time-transit">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Parks Features -->
+        <div class="feature-category">
+            <div class="category-header">
+                <span>🌳</span>
+                <span>Parks & Recreation</span>
+            </div>
+            <div class="feature-item" onclick="toggleFeature('parks-layer')">
+                <div class="feature-label">
+                    <span class="feature-icon">🏞️</span>
+                    <span>Show All Parks</span>
+                </div>
+                <div class="feature-toggle-switch active" id="toggle-parks-layer">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+            <div class="feature-item" onclick="toggleFeature('amenity-filter')">
+                <div class="feature-label">
+                    <span class="feature-icon">🔍</span>
+                    <span>Amenity Filters</span>
+                </div>
+                <div class="feature-toggle-switch" id="toggle-amenity-filter">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+            <div class="feature-item" onclick="toggleFeature('trails')">
+                <div class="feature-label">
+                    <span class="feature-icon">🥾</span>
+                    <span>Trail Network</span>
+                </div>
+                <div class="feature-toggle-switch" id="toggle-trails">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+            <div class="feature-item" onclick="toggleFeature('park-reviews')">
+                <div class="feature-label">
+                    <span class="feature-icon">⭐</span>
+                    <span>Park Reviews</span>
+                    <span class="badge">Phase 2</span>
+                </div>
+                <div class="feature-toggle-switch" id="toggle-park-reviews">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+            <div class="feature-item" onclick="toggleFeature('park-photos')">
+                <div class="feature-label">
+                    <span class="feature-icon">📸</span>
+                    <span>Photo Galleries</span>
+                    <span class="badge">Phase 2</span>
+                </div>
+                <div class="feature-toggle-switch" id="toggle-park-photos">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Additional Features -->
+        <div class="feature-category">
+            <div class="category-header">
+                <span>🎯</span>
+                <span>Smart Features</span>
+            </div>
+            <div class="feature-item" onclick="toggleFeature('bike-share')">
+                <div class="feature-label">
+                    <span class="feature-icon">🚴</span>
+                    <span>Bike Share Stations</span>
+                    <span class="badge">Phase 2</span>
+                </div>
+                <div class="feature-toggle-switch" id="toggle-bike-share">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+            <div class="feature-item" onclick="toggleFeature('weather')">
+                <div class="feature-label">
+                    <span class="feature-icon">🌤️</span>
+                    <span>Weather Overlay</span>
+                    <span class="badge">Phase 2</span>
+                </div>
+                <div class="feature-toggle-switch" id="toggle-weather">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+            <div class="feature-item" onclick="toggleFeature('favorites')">
+                <div class="feature-label">
+                    <span class="feature-icon">❤️</span>
+                    <span>Saved Favorites</span>
+                    <span class="badge">Phase 2</span>
+                </div>
+                <div class="feature-toggle-switch" id="toggle-favorites">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Map Legend -->
+    <div class="map-legend" id="mapLegend" style="display: none;">
+        <div class="legend-title">🎨 Map Legend</div>
+        <div id="legendContent"></div>
+    </div>
+    
+    <!-- Loading Indicator -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Loading map features...</p>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Feature Scripts -->
+    <script src="transit-features.js"></script>
+    <script src="parks-features.js"></script>
+    <script src="phase2-features.js"></script>
+    
+    <!-- Main Application -->
+    <script>
+        // State management
+        const appState = {
+            map: null,
+            transitFeatures: null,
+            parksFeatures: null,
+            phase2Features: null,
+            activeFeatures: new Set(['parks-layer']),
+            layers: {},
+            favorites: JSON.parse(localStorage.getItem('insite_favorites') || '[]'),
+            reviews: JSON.parse(localStorage.getItem('insite_park_reviews') || '{}')
+        };
+
+        // Initialize map
+        function initMap() {
+            appState.map = L.map('map').setView([33.7490, -84.3880], 11);
+            
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                maxZoom: 19
+            }).addTo(appState.map);
+        }
+
+        // Initialize features
+        async function initializeApp() {
+            try {
+                console.log('🚀 Initializing InSite Map Features...');
+                
+                initMap();
+                
+                // Initialize Phase 2 features first
+                appState.phase2Features = new Phase2Features(appState.map);
+                await appState.phase2Features.fetchWeatherData();
+                await appState.phase2Features.loadBikeShareData();
+                
+                // Initialize transit features
+                appState.transitFeatures = await initializeEnhancedTransitFeatures(appState.map);
+                
+                // Initialize parks features  
+                appState.parksFeatures = await initializeEnhancedParksFeatures(appState.map);
+                
+                // Hide loading screen
+                setTimeout(() => {
+                    document.getElementById('loading').style.display = 'none';
+                    showNotification('🎉 Map loaded successfully! Click "Show Features" to explore.', 'success');
+                }, 1500);
+                
+                console.log('✅ Application initialized successfully!');
+                
+            } catch (error) {
+                console.error('❌ Error initializing application:', error);
+                showNotification('Error loading map features. Please refresh the page.', 'error');
+            }
+        }
+
+        // Toggle feature panel
+        function toggleFeaturePanel() {
+            const panel = document.getElementById('featurePanel');
+            const toggleText = document.getElementById('toggleText');
+            const isOpen = panel.classList.contains('open');
+            
+            panel.classList.toggle('open');
+            toggleText.textContent = isOpen ? 'Show Features' : 'Hide Features';
+        }
+
+        // Toggle individual features
+        function toggleFeature(featureName) {
+            const toggle = document.getElementById(`toggle-${featureName}`);
+            const isActive = toggle.classList.contains('active');
+            
+            toggle.classList.toggle('active');
+            
+            if (isActive) {
+                appState.activeFeatures.delete(featureName);
+                disableFeature(featureName);
+            } else {
+                appState.activeFeatures.add(featureName);
+                enableFeature(featureName);
+            }
+            
+            updateLegend();
+        }
+
+        // Enable feature
+        function enableFeature(featureName) {
+            console.log(`Enabling feature: ${featureName}`);
+            
+            switch(featureName) {
+                case 'transit-stops':
+                    if (appState.transitFeatures && appState.transitFeatures.showAllStops) {
+                        appState.transitFeatures.showAllStops();
+                    }
+                    showNotification('📍 Transit stops displayed on map', 'info');
+                    break;
+                    
+                case 'park-ride':
+                    if (appState.transitFeatures && appState.transitFeatures.showParkAndRide) {
+                        appState.transitFeatures.showParkAndRide();
+                    }
+                    showNotification('🅿️ Park & Ride locations displayed', 'info');
+                    break;
+                    
+                case 'accessibility-heatmap':
+                    if (appState.transitFeatures && appState.transitFeatures.showAccessibilityHeatmap) {
+                        appState.transitFeatures.showAccessibilityHeatmap();
+                    }
+                    showNotification('🗺️ Accessibility heatmap generated', 'info');
+                    break;
+                    
+                case 'parks-layer':
+                    if (appState.parksFeatures && appState.parksFeatures.showAllParks) {
+                        appState.parksFeatures.showAllParks();
+                    }
+                    showNotification('🏞️ Parks displayed on map', 'info');
+                    break;
+                    
+                case 'amenity-filter':
+                    if (appState.parksFeatures && appState.parksFeatures.showAmenityFilters) {
+                        appState.parksFeatures.showAmenityFilters();
+                    }
+                    showNotification('🔍 Amenity filters activated', 'info');
+                    break;
+                    
+                case 'trails':
+                    if (appState.parksFeatures && appState.parksFeatures.showTrails) {
+                        appState.parksFeatures.showTrails();
+                    }
+                    showNotification('🥾 Trail network displayed', 'info');
+                    break;
+                    
+                // Phase 2 features
+                case 'real-time-transit':
+                    enableRealTimeTransit();
+                    break;
+                case 'park-reviews':
+                    enableParkReviews();
+                    break;
+                case 'park-photos':
+                    enableParkPhotos();
+                    break;
+                case 'bike-share':
+                    enableBikeShare();
+                    break;
+                case 'weather':
+                    enableWeatherOverlay();
+                    break;
+                case 'favorites':
+                    enableFavorites();
+                    break;
+            }
+        }
+
+        // Disable feature
+        function disableFeature(featureName) {
+            console.log(`Disabling feature: ${featureName}`);
+            
+            if (appState.layers[featureName]) {
+                appState.map.removeLayer(appState.layers[featureName]);
+                delete appState.layers[featureName];
+            }
+        }
+
+        // Update legend
+        function updateLegend() {
+            const legend = document.getElementById('mapLegend');
+            const content = document.getElementById('legendContent');
+            
+            if (appState.activeFeatures.size === 0) {
+                legend.style.display = 'none';
+                return;
+            }
+            
+            legend.style.display = 'block';
+            
+            const legendItems = [];
+            
+            if (appState.activeFeatures.has('transit-stops')) {
+                legendItems.push('<div class="legend-item"><div class="legend-color" style="background: #E41E26;"></div><span>MARTA</span></div>');
+                legendItems.push('<div class="legend-item"><div class="legend-color" style="background: #0066CC;"></div><span>CobbLinc</span></div>');
+                legendItems.push('<div class="legend-item"><div class="legend-color" style="background: #00A651;"></div><span>Gwinnett</span></div>');
+            }
+            
+            if (appState.activeFeatures.has('park-ride')) {
+                legendItems.push('<div class="legend-item"><div class="legend-color" style="background: #FF9800;"></div><span>Park & Ride</span></div>');
+            }
+            
+            if (appState.activeFeatures.has('parks-layer')) {
+                legendItems.push('<div class="legend-item"><div class="legend-color" style="background: #4CAF50;"></div><span>Parks</span></div>');
+            }
+            
+            if (appState.activeFeatures.has('trails')) {
+                legendItems.push('<div class="legend-item"><div class="legend-color" style="background: #8BC34A;"></div><span>Trails</span></div>');
+            }
+            
+            content.innerHTML = legendItems.join('');
+        }
+
+        // Search functionality
+        function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+            
+            console.log('Searching for:', query);
+            showNotification(`🔍 Searching for "${query}"...`, 'info');
+            
+            // Search in parks and transit stops
+            // This will be implemented based on loaded data
+        }
+
+        // Notification system
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+            notification.innerHTML = `
+                <span style="font-size: 20px;">${icon}</span>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1) reverse';
+                setTimeout(() => notification.remove(), 400);
+            }, 4000);
+        }
+
+        // Real-time transit updates (Phase 2)
+        function enableRealTimeTransit() {
+            appState.phase2Features.initRealTimeTransit();
+            showNotification('⚡ Real-time transit tracking enabled', 'success');
+        }
+
+        function updateRealTimeTransit() {
+            if (!appState.activeFeatures.has('real-time-transit')) return;
+            appState.phase2Features.updateTransitPositions();
+        }
+
+        // Park reviews system (Phase 2)
+        function enableParkReviews() {
+            showNotification('⭐ Park reviews system activated - Click any park to view or add reviews', 'success');
+        }
+
+        function loadReviewsData() {
+            console.log('Loaded', Object.keys(appState.reviews).length, 'park reviews');
+        }
+
+        function addParkReview(parkId, rating, comment) {
+            appState.reviews[parkId] = appState.reviews[parkId] || [];
+            appState.reviews[parkId].push({
+                rating,
+                comment,
+                date: new Date().toISOString(),
+                user: 'Anonymous'
+            });
+            localStorage.setItem('insite_park_reviews', JSON.stringify(appState.reviews));
+            showNotification('✓ Review submitted successfully!', 'success');
+        }
+
+        // Global helper for review form
+        window.openReviewForm = function(parkId, parkName) {
+            const modal = document.createElement('div');
+            modal.id = 'reviewModal';
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+                z-index: 10001; display: flex; align-items: center; justify-content: center;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: #1f2937; border: 1px solid rgba(255,255,255,0.2); 
+                            border-radius: 16px; padding: 30px; max-width: 500px; width: 90%;">
+                    <h3 style="color: white; margin-bottom: 20px;">✍️ Review ${parkName}</h3>
+                    <div style="margin-bottom: 20px;">
+                        <label style="color: white; display: block; margin-bottom: 10px;">Rating:</label>
+                        <div id="starRating" style="font-size: 32px; cursor: pointer;">
+                            <span onclick="setRating(1)">☆</span>
+                            <span onclick="setRating(2)">☆</span>
+                            <span onclick="setRating(3)">☆</span>
+                            <span onclick="setRating(4)">☆</span>
+                            <span onclick="setRating(5)">☆</span>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label style="color: white; display: block; margin-bottom: 10px;">Your Review:</label>
+                        <textarea id="reviewComment" rows="4" 
+                                  style="width: 100%; padding: 12px; background: rgba(255,255,255,0.1); 
+                                         border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; 
+                                         color: white; font-family: inherit;" 
+                                  placeholder="Share your experience..."></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="submitReview('${parkId}', '${parkName}')" 
+                                style="flex: 1; padding: 12px; background: linear-gradient(135deg, #4f46e5, #6366f1); 
+                                       border: none; color: white; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            Submit Review
+                        </button>
+                        <button onclick="closeReviewModal()" 
+                                style="padding: 12px 24px; background: rgba(255,255,255,0.1); 
+                                       border: 1px solid rgba(255,255,255,0.2); color: white; 
+                                       border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        };
+
+        window.currentRating = 0;
+        window.setRating = function(rating) {
+            window.currentRating = rating;
+            const stars = document.querySelectorAll('#starRating span');
+            stars.forEach((star, index) => {
+                star.textContent = index < rating ? '⭐' : '☆';
+            });
+        };
+
+        window.submitReview = function(parkId, parkName) {
+            const comment = document.getElementById('reviewComment').value;
+            if (window.currentRating === 0) {
+                showNotification('Please select a rating', 'error');
+                return;
+            }
+            if (!comment.trim()) {
+                showNotification('Please write a comment', 'error');
+                return;
+            }
+            
+            appState.phase2Features.addParkReview(parkId, window.currentRating, comment);
+            closeReviewModal();
+            showNotification('✓ Review submitted successfully!', 'success');
+        };
+
+        window.closeReviewModal = function() {
+            const modal = document.getElementById('reviewModal');
+            if (modal) modal.remove();
+        };
+
+        window.markReviewHelpful = function(parkId, reviewId) {
+            appState.phase2Features.markReviewHelpful(parkId, reviewId);
+            showNotification('👍 Marked as helpful', 'success');
+        };
+
+        // Park photo galleries (Phase 2)
+        function enableParkPhotos() {
+            showNotification('📸 Photo galleries enabled - Click any park to view photos', 'success');
+        }
+
+        window.openPhotoUpload = function(parkId) {
+            showNotification('📸 Photo upload feature coming soon!', 'info');
+            // In production, this would open a file picker and upload to cloud storage
+        };
+
+        window.viewPhoto = function(url, caption) {
+            showNotification(`📸 ${caption}`, 'info');
+        };
+
+        // Bike share integration (Phase 2)
+        function enableBikeShare() {
+            showNotification('🚴 Loading bike share stations...', 'info');
+            
+            const bikeLayer = appState.phase2Features.displayBikeShareStations();
+            bikeLayer.addTo(appState.map);
+            appState.layers['bike-share'] = bikeLayer;
+            
+            showNotification('🚴 Bike share stations displayed', 'success');
+        }
+
+        // Weather overlay (Phase 2)
+        function enableWeatherOverlay() {
+            showNotification('🌤️ Loading weather data...', 'info');
+            
+            const weatherWidget = appState.phase2Features.createWeatherWidget();
+            weatherWidget.addTo(appState.map);
+            appState.layers['weather'] = weatherWidget;
+            
+            showNotification('🌤️ Weather overlay displayed', 'success');
+        }
+
+        // Favorites system (Phase 2)
+        function enableFavorites() {
+            showFavoritesPanel();
+        }
+
+        function showFavoritesPanel() {
+            const panel = document.createElement('div');
+            panel.id = 'favoritesPanel';
+            panel.style.cssText = `
+                position: absolute; bottom: 20px; right: 20px;
+                background: var(--bg-glass); backdrop-filter: blur(20px);
+                border: 1px solid var(--border-glass); border-radius: 16px;
+                padding: 20px; z-index: 1001; max-width: 350px; max-height: 400px;
+                overflow-y: auto; box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+            `;
+            
+            panel.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: white; margin: 0; font-size: 18px;">❤️ Favorites</h3>
+                    <button onclick="closeFavoritesPanel()" 
+                            style="background: none; border: none; color: white; font-size: 24px; 
+                                   cursor: pointer; opacity: 0.7;">×</button>
+                </div>
+                <div id="favoritesList">
+                    ${appState.phase2Features.displayFavoritesList()}
+                </div>
+            `;
+            
+            document.body.appendChild(panel);
+            showNotification('❤️ Favorites panel opened', 'info');
+        }
+
+        window.closeFavoritesPanel = function() {
+            const panel = document.getElementById('favoritesPanel');
+            if (panel) panel.remove();
+        };
+
+        window.toggleFavorite = function(location) {
+            const added = appState.phase2Features.addToFavorites(location);
+            if (added) {
+                showNotification('❤️ Added to favorites!', 'success');
+            } else {
+                appState.phase2Features.removeFromFavorites(location.id, location.type);
+                showNotification('Removed from favorites', 'info');
+            }
+        };
+
+        window.flyToLocation = function(lat, lng) {
+            appState.map.flyTo([lat, lng], 15, {
+                duration: 1.5
+            });
+            closeFavoritesPanel();
+        };
+
+        function loadFavoritesData() {
+            console.log('Loaded', appState.favorites.length, 'favorite locations');
+        }
+
+        function addToFavorites(location) {
+            appState.favorites.push({
+                ...location,
+                addedAt: new Date().toISOString()
+            });
+            localStorage.setItem('insite_favorites', JSON.stringify(appState.favorites));
+            showNotification('❤️ Added to favorites!', 'success');
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'f' && e.ctrlKey) {
+                e.preventDefault();
+                toggleFeaturePanel();
+            }
+            if (e.key === '/' && !e.target.matches('input')) {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+        });
+
+        // Enter key for search
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        // Initialize app on load
+        window.addEventListener('load', initializeApp);
+    </script>
+</body>
+</html>

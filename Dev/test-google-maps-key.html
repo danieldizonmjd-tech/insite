@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Maps API Key Tester</title>
+  <script src="api-config.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #0f172a;
+      color: #f1f5f9;
+    }
+    .container {
+      background: rgba(30, 41, 59, 0.6);
+      border-radius: 16px;
+      padding: 30px;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+    h1 {
+      margin: 0 0 10px 0;
+      color: #8b5cf6;
+    }
+    .subtitle {
+      color: #94a3b8;
+      margin-bottom: 30px;
+    }
+    .test-step {
+      background: rgba(15, 23, 42, 0.8);
+      border-left: 4px solid #8b5cf6;
+      padding: 15px 20px;
+      margin: 15px 0;
+      border-radius: 8px;
+    }
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+    .status.pending { background: #374151; color: #9ca3af; }
+    .status.success { background: #10b981; color: white; }
+    .status.error { background: #ef4444; color: white; }
+    .status.warning { background: #f59e0b; color: white; }
+    .result {
+      margin-top: 10px;
+      padding: 10px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: #94a3b8;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .api-key-display {
+      background: rgba(0,0,0,0.4);
+      padding: 12px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      margin: 15px 0;
+      word-break: break-all;
+    }
+    #map {
+      height: 300px;
+      margin: 20px 0;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+    }
+    .btn {
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 10px 10px 10px 0;
+    }
+    .btn:hover {
+      opacity: 0.9;
+    }
+    .error-box {
+      background: rgba(239, 68, 68, 0.1);
+      border: 2px solid #ef4444;
+      padding: 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+    }
+    .success-box {
+      background: rgba(16, 185, 129, 0.1);
+      border: 2px solid #10b981;
+      padding: 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🗺️ Google Maps API Key Tester</h1>
+    <p class="subtitle">Diagnose issues with your API key setup</p>
+
+    <div class="test-step">
+      <strong>Step 1: Check API Configuration</strong>
+      <span class="status pending" id="status-1">Pending</span>
+      <div class="result" id="result-1" style="display: none;"></div>
+    </div>
+
+    <div class="test-step">
+      <strong>Step 2: Fetch API Key from Backend</strong>
+      <span class="status pending" id="status-2">Pending</span>
+      <div class="result" id="result-2" style="display: none;"></div>
+    </div>
+
+    <div class="test-step">
+      <strong>Step 3: Validate API Key Format</strong>
+      <span class="status pending" id="status-3">Pending</span>
+      <div class="result" id="result-3" style="display: none;"></div>
+    </div>
+
+    <div class="test-step">
+      <strong>Step 4: Load Google Maps API</strong>
+      <span class="status pending" id="status-4">Pending</span>
+      <div class="result" id="result-4" style="display: none;"></div>
+    </div>
+
+    <div class="test-step">
+      <strong>Step 5: Initialize Map</strong>
+      <span class="status pending" id="status-5">Pending</span>
+      <div class="result" id="result-5" style="display: none;"></div>
+    </div>
+
+    <div id="map">Map will load here...</div>
+
+    <button class="btn" onclick="runTests()">🔄 Run Tests Again</button>
+    <button class="btn" onclick="window.location.href='GOOGLE_MAPS_API_KEY_SETUP.md'">📖 Setup Guide</button>
+  </div>
+
+  <script>
+    let apiKey = null;
+    let testsPassed = 0;
+    let totalTests = 5;
+
+    function updateStatus(step, status, message) {
+      const statusEl = document.getElementById(`status-${step}`);
+      const resultEl = document.getElementById(`result-${step}`);
+      
+      statusEl.className = `status ${status}`;
+      statusEl.textContent = status === 'success' ? '✓ Passed' : 
+                             status === 'error' ? '✗ Failed' : 
+                             status === 'warning' ? '⚠ Warning' : 'Pending';
+      
+      if (message) {
+        resultEl.style.display = 'block';
+        resultEl.textContent = message;
+      }
+      
+      if (status === 'success') testsPassed++;
+    }
+
+    async function runTests() {
+      testsPassed = 0;
+      
+      // Reset all statuses
+      for (let i = 1; i <= totalTests; i++) {
+        document.getElementById(`status-${i}`).className = 'status pending';
+        document.getElementById(`status-${i}`).textContent = 'Pending';
+        document.getElementById(`result-${i}`).style.display = 'none';
+      }
+      
+      // Test 1: Check API Configuration
+      try {
+        if (typeof API_CONFIG === 'undefined') {
+          updateStatus(1, 'error', 'API_CONFIG not found. Make sure api-config.js is loaded.');
+          return;
+        }
+        if (typeof getAPIKey !== 'function') {
+          updateStatus(1, 'error', 'getAPIKey function not found. Check api-config.js.');
+          return;
+        }
+        updateStatus(1, 'success', `API Config loaded successfully.\nBase URL: ${API_CONFIG.baseURL}\nEndpoint: ${API_CONFIG.apiKeyEndpoint}`);
+      } catch (err) {
+        updateStatus(1, 'error', `Error: ${err.message}`);
+        return;
+      }
+
+      // Test 2: Fetch API Key
+      try {
+        apiKey = await getAPIKey('google_maps');
+        updateStatus(2, 'success', `API key retrieved: ${apiKey.substring(0, 20)}...${apiKey.substring(apiKey.length - 4)}\nFull length: ${apiKey.length} characters`);
+      } catch (err) {
+        updateStatus(2, 'error', `Failed to fetch API key: ${err.message}\n\nCheck that:\n- PHP server is running (php -S localhost:8000)\n- local-config.php exists with your API key\n- Backend endpoint is accessible`);
+        return;
+      }
+
+      // Test 3: Validate API Key Format
+      try {
+        if (!apiKey || apiKey.length === 0) {
+          updateStatus(3, 'error', 'API key is empty');
+          return;
+        }
+        if (!apiKey.startsWith('AIza')) {
+          updateStatus(3, 'warning', `API key doesn't start with "AIza" (got: ${apiKey.substring(0, 4)})\nThis might not be a valid Google Maps API key.`);
+        } else if (apiKey.length < 30) {
+          updateStatus(3, 'warning', `API key seems too short (${apiKey.length} chars)\nGoogle Maps API keys are usually 39 characters.`);
+        } else {
+          updateStatus(3, 'success', `API key format looks valid:\n- Starts with "AIza" ✓\n- Length: ${apiKey.length} characters ✓`);
+        }
+      } catch (err) {
+        updateStatus(3, 'error', `Validation error: ${err.message}`);
+        return;
+      }
+
+      // Test 4: Load Google Maps API
+      try {
+        updateStatus(4, 'pending', 'Loading Google Maps JavaScript API...');
+        
+        // Set up error handlers
+        window.gm_authFailure = function() {
+          updateStatus(4, 'error', `AUTHENTICATION FAILED!\n\nYour API key is INVALID, EXPIRED, or RESTRICTED.\n\nPossible reasons:\n1. API key is not valid\n2. Maps JavaScript API is not enabled in Google Cloud Console\n3. API key is restricted and doesn't allow localhost:8000\n4. Billing is not enabled in Google Cloud Console\n\nSee GOOGLE_MAPS_API_KEY_SETUP.md for instructions.`);
+        };
+
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}`;
+        script.async = true;
+        
+        script.onload = () => {
+          if (typeof google !== 'undefined' && google.maps) {
+            updateStatus(4, 'success', 'Google Maps API loaded successfully!\nThe google.maps object is available.');
+            runTest5();
+          } else {
+            updateStatus(4, 'error', 'Script loaded but google.maps is not available.');
+          }
+        };
+        
+        script.onerror = (error) => {
+          updateStatus(4, 'error', `Failed to load script from Google servers.\nError: ${error}\n\nCheck your internet connection.`);
+        };
+        
+        document.head.appendChild(script);
+      } catch (err) {
+        updateStatus(4, 'error', `Error loading Maps API: ${err.message}`);
+      }
+    }
+
+    function runTest5() {
+      // Test 5: Initialize Map
+      try {
+        const mapDiv = document.getElementById('map');
+        const map = new google.maps.Map(mapDiv, {
+          center: { lat: 33.7490, lng: -84.3880 }, // Atlanta
+          zoom: 11,
+          mapId: 'test-map'
+        });
+        
+        // Add a marker
+        new google.maps.Marker({
+          position: { lat: 33.7490, lng: -84.3880 },
+          map: map,
+          title: 'Atlanta, GA'
+        });
+        
+        updateStatus(5, 'success', 'Map initialized and displayed successfully!\nMarker added at Atlanta coordinates.');
+        showSuccessMessage();
+      } catch (err) {
+        updateStatus(5, 'error', `Failed to initialize map: ${err.message}`);
+      }
+    }
+
+    function showSuccessMessage() {
+      const container = document.querySelector('.container');
+      const successBox = document.createElement('div');
+      successBox.className = 'success-box';
+      successBox.innerHTML = `
+        <h3 style="margin-top: 0; color: #10b981;">🎉 All Tests Passed!</h3>
+        <p>Your Google Maps API key is working correctly!</p>
+        <p><strong>Next steps:</strong></p>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+          <li>Open <code>insite_main.html</code> - it should work now</li>
+          <li>Open <code>index.html</code> - it should work now</li>
+          <li>Deploy to production with proper API key restrictions</li>
+        </ul>
+      `;
+      container.appendChild(successBox);
+    }
+
+    // Auto-run tests on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(runTests, 500);
+    });
+  </script>
+</body>
+</html>

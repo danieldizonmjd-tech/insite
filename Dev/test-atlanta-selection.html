@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Atlanta Metro Selection</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #0a0f1e; color: white; }
+    .test-result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+    .pass { background: #10b981; }
+    .fail { background: #ef4444; }
+    button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Atlanta Metro Selection Test</h1>
+  
+  <h2>Test Results:</h2>
+  <div id="results"></div>
+  
+  <h2>Actions:</h2>
+  <button onclick="clearStorage()">Clear localStorage</button>
+  <button onclick="openMainApp()">Open InSite Main App</button>
+  
+  <script>
+    function addResult(test, passed) {
+      const div = document.createElement('div');
+      div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+      div.innerHTML = `${passed ? '✅' : '❌'} ${test}`;
+      document.getElementById('results').appendChild(div);
+    }
+    
+    function clearStorage() {
+      localStorage.clear();
+      addResult('localStorage cleared', true);
+      alert('localStorage cleared! Now open the main app to see the metro selection.');
+    }
+    
+    function openMainApp() {
+      window.location.href = 'insite_main.html';
+    }
+    
+    // Run tests
+    window.onload = function() {
+      // Check if Atlanta exists in main HTML
+      fetch('insite_main.html')
+        .then(r => r.text())
+        .then(html => {
+          addResult('Atlanta Metro card exists in HTML', html.includes('Atlanta Metro'));
+          addResult('Atlanta has onclick handler', html.includes("selectMetroRegion('atlanta')"));
+          addResult('Atlanta has "Available Now" badge', html.includes('Available Now'));
+          addResult('CSS file linked', html.includes('insite-professional.css'));
+          
+          // Check localStorage
+          const savedMetro = localStorage.getItem('selectedMetroRegion');
+          if (savedMetro) {
+            addResult(`Metro selection saved: ${savedMetro}`, true);
+            addResult('Note: Clear localStorage to see metro selection screen', false);
+          } else {
+            addResult('No metro saved - selection screen will show', true);
+          }
+        });
+    };
+  </script>
+</body>
+</html>

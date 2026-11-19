@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Endpoint Test</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background: #1a202c;
+      color: #e2e8f0;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .test-section {
+      background: #2d3748;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-left: 4px solid #4299e1;
+    }
+    h2 {
+      color: #4299e1;
+      margin-top: 0;
+    }
+    button {
+      background: #4299e1;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    button:hover {
+      background: #3182ce;
+    }
+    .output {
+      background: #1a202c;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 10px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .success { color: #48bb78; }
+    .error { color: #f56565; }
+    .info { color: #4299e1; }
+  </style>
+</head>
+<body>
+  <h1>🔍 API Endpoint Diagnostic Tool</h1>
+  
+  <div class="test-section">
+    <h2>Test 1: Direct Fetch Test</h2>
+    <button onclick="testDirectFetch()">Run Test</button>
+    <div id="test1-output" class="output"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>Test 2: With api-config.js</h2>
+    <button onclick="testWithApiConfig()">Run Test</button>
+    <div id="test2-output" class="output"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>Test 3: Response Headers</h2>
+    <button onclick="testHeaders()">Run Test</button>
+    <div id="test3-output" class="output"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>Test 4: Character Encoding</h2>
+    <button onclick="testEncoding()">Run Test</button>
+    <div id="test4-output" class="output"></div>
+  </div>
+
+  <script src="api-config.js"></script>
+  <script>
+    function log(elementId, message, type = 'info') {
+      const output = document.getElementById(elementId);
+      const className = type;
+      const timestamp = new Date().toLocaleTimeString();
+      output.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+    }
+    
+    async function testDirectFetch() {
+      const output = document.getElementById('test1-output');
+      output.innerHTML = '';
+      
+      try {
+        log('test1-output', '🚀 Starting direct fetch test...', 'info');
+        
+        const url = 'http://localhost:8000/access_api_keys.php?key=google_maps';
+        log('test1-output', `📡 Fetching: ${url}`, 'info');
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          cache: 'no-cache'
+        });
+        
+        log('test1-output', `✅ Response status: ${response.status}`, 'success');
+        log('test1-output', `📋 Content-Type: ${response.headers.get('content-type')}`, 'info');
+        
+        const text = await response.text();
+        log('test1-output', `📝 Raw response (${text.length} chars):`, 'info');
+        log('test1-output', text, 'info');
+        
+        // Try to parse as JSON
+        try {
+          const json = JSON.parse(text);
+          log('test1-output', '✅ Valid JSON!', 'success');
+          log('test1-output', `🔑 API Key: ${json.api_key}`, 'success');
+        } catch (e) {
+          log('test1-output', `❌ JSON Parse Error: ${e.message}`, 'error');
+          log('test1-output', `First 100 chars: ${text.substring(0, 100)}`, 'error');
+        }
+        
+      } catch (error) {
+        log('test1-output', `❌ Error: ${error.message}`, 'error');
+        log('test1-output', error.stack, 'error');
+      }
+    }
+    
+    async function testWithApiConfig() {
+      const output = document.getElementById('test2-output');
+      output.innerHTML = '';
+      
+      try {
+        log('test2-output', '🚀 Testing with api-config.js...', 'info');
+        log('test2-output', `🌐 Is Production: ${API_CONFIG.isProduction}`, 'info');
+        log('test2-output', `📍 Base URL: ${API_CONFIG.baseURL}`, 'info');
+        log('test2-output', `🔗 API Endpoint: ${API_CONFIG.apiKeyEndpoint}`, 'info');
+        
+        const apiKey = await getAPIKey('google_maps');
+        
+        log('test2-output', '✅ Success!', 'success');
+        log('test2-output', `🔑 API Key: ${apiKey}`, 'success');
+        log('test2-output', `📏 Key length: ${apiKey.length}`, 'info');
+        
+      } catch (error) {
+        log('test2-output', `❌ Error: ${error.message}`, 'error');
+        log('test2-output', error.stack, 'error');
+      }
+    }
+    
+    async function testHeaders() {
+      const output = document.getElementById('test3-output');
+      output.innerHTML = '';
+      
+      try {
+        log('test3-output', '🚀 Testing response headers...', 'info');
+        
+        const response = await fetch('http://localhost:8000/access_api_keys.php?key=google_maps');
+        
+        log('test3-output', '📋 All Response Headers:', 'info');
+        for (const [key, value] of response.headers.entries()) {
+          log('test3-output', `  ${key}: ${value}`, 'info');
+        }
+        
+      } catch (error) {
+        log('test3-output', `❌ Error: ${error.message}`, 'error');
+      }
+    }
+    
+    async function testEncoding() {
+      const output = document.getElementById('test4-output');
+      output.innerHTML = '';
+      
+      try {
+        log('test4-output', '🚀 Testing character encoding...', 'info');
+        
+        const response = await fetch('http://localhost:8000/access_api_keys.php?key=google_maps');
+        const text = await response.text();
+        
+        log('test4-output', `📏 Response length: ${text.length} chars`, 'info');
+        log('test4-output', `🔤 First 10 chars (hex):`, 'info');
+        
+        for (let i = 0; i < Math.min(10, text.length); i++) {
+          const char = text[i];
+          const code = char.charCodeAt(0);
+          const hex = code.toString(16).padStart(2, '0');
+          log('test4-output', `  [${i}] '${char}' = 0x${hex} (${code})`, 'info');
+        }
+        
+        // Check for BOM
+        if (text.charCodeAt(0) === 0xFEFF) {
+          log('test4-output', '⚠️ WARNING: Byte Order Mark (BOM) detected!', 'error');
+        } else {
+          log('test4-output', '✅ No BOM detected', 'success');
+        }
+        
+        // Check for leading whitespace
+        if (text[0] !== '{') {
+          log('test4-output', `⚠️ WARNING: Response doesn't start with '{'. Starts with: '${text[0]}'`, 'error');
+        } else {
+          log('test4-output', '✅ Response starts correctly with {', 'success');
+        }
+        
+      } catch (error) {
+        log('test4-output', `❌ Error: ${error.message}`, 'error');
+      }
+    }
+    
+    // Auto-run first test on load
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => testDirectFetch(), 500);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InSite Theme Toggle Test</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="insite-modern.css">
+  <style>
+    .test-container {
+      padding: 4rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .test-section {
+      margin-bottom: 3rem;
+      padding: 2rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+    }
+    
+    .test-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+    }
+    
+    .color-sample {
+      display: inline-block;
+      width: 100px;
+      height: 60px;
+      border-radius: var(--radius-md);
+      margin: 0.5rem;
+      border: 2px solid var(--border-color);
+    }
+    
+    .color-label {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      text-align: center;
+      display: block;
+      margin-top: 0.25rem;
+    }
+    
+    .info-box {
+      background: var(--bg-elevated);
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      border-left: 4px solid var(--primary);
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Theme Toggle Button -->
+  <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+    <i class="fas fa-moon" id="themeIcon"></i>
+  </button>
+
+  <div class="test-container">
+    <h1 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+      InSite Theme Toggle Test
+    </h1>
+    <p style="color: var(--text-muted); margin-bottom: 3rem;">
+      Click the theme toggle button in the top-right corner to switch between light and dark modes
+    </p>
+
+    <!-- Color Swatches -->
+    <div class="test-section">
+      <h2 class="test-title">🎨 Color Palette Test</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <div class="color-sample" style="background: var(--bg-primary);"></div>
+          <span class="color-label">Primary BG</span>
+        </div>
+        <div>
+          <div class="color-sample" style="background: var(--bg-secondary);"></div>
+          <span class="color-label">Secondary BG</span>
+        </div>
+        <div>
+          <div class="color-sample" style="background: var(--bg-card);"></div>
+          <span class="color-label">Card BG</span>
+        </div>
+        <div>
+          <div class="color-sample" style="background: var(--primary);"></div>
+          <span class="color-label">Primary</span>
+        </div>
+        <div>
+          <div class="color-sample" style="background: var(--success);"></div>
+          <span class="color-label">Success</span>
+        </div>
+        <div>
+          <div class="color-sample" style="background: var(--warning);"></div>
+          <span class="color-label">Warning</span>
+        </div>
+        <div>
+          <div class="color-sample" style="background: var(--danger);"></div>
+          <span class="color-label">Danger</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typography Test -->
+    <div class="test-section">
+      <h2 class="test-title">📝 Typography Test</h2>
+      <p style="color: var(--text-primary); font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">
+        Primary Text (Headings & Important Content)
+      </p>
+      <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">
+        Secondary Text (Body content & regular information)
+      </p>
+      <p style="color: var(--text-muted); font-size: 0.875rem;">
+        Muted Text (Hints, captions, and less important information)
+      </p>
+    </div>
+
+    <!-- Card Test -->
+    <div class="test-section">
+      <h2 class="test-title">🃏 Card Components</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+        <div style="background: var(--bg-elevated); padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+          <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Card Title</h3>
+          <p style="color: var(--text-secondary); font-size: 0.875rem;">This is a sample card with elevated background. Notice how it stands out from the page background.</p>
+        </div>
+        <div style="background: var(--bg-card); padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); box-shadow: var(--shadow-md);">
+          <h3 style="color: var(--success); margin-bottom: 0.5rem;">Another Card</h3>
+          <p style="color: var(--text-secondary); font-size: 0.875rem;">This card has a shadow effect that should be subtle in light mode and more prominent in dark mode.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Box Test -->
+    <div class="test-section">
+      <h2 class="test-title">ℹ️ Information Boxes</h2>
+      
+      <div class="info-box">
+        <h4 style="color: var(--primary); margin-bottom: 0.5rem;">
+          <i class="fas fa-info-circle"></i> Current Theme Info
+        </h4>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">
+          <strong>Active Theme:</strong> <span id="currentTheme">Loading...</span>
+        </p>
+        <p style="color: var(--text-muted); font-size: 0.875rem;">
+          Your theme preference is automatically saved and will persist across page reloads.
+        </p>
+      </div>
+    </div>
+
+    <!-- Test Results -->
+    <div class="test-section">
+      <h2 class="test-title">✅ Test Results</h2>
+      <div style="display: grid; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fas fa-check-circle" style="color: var(--success);"></i>
+          <span style="color: var(--text-secondary);">Theme toggle button visible</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fas fa-check-circle" style="color: var(--success);"></i>
+          <span style="color: var(--text-secondary);">Colors change on toggle</span>
+        </div>
+        <div style="display: flex; align-items; gap: 0.5rem;">
+          <i class="fas fa-check-circle" style="color: var(--success);"></i>
+          <span style="color: var(--text-secondary);">Icon switches (moon ↔ sun)</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fas fa-check-circle" style="color: var(--success);"></i>
+          <span style="color: var(--text-secondary);">Preference saved to localStorage</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Theme Toggle Functions
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      
+      // Update icon
+      const themeIcon = document.getElementById('themeIcon');
+      if (themeIcon) {
+        themeIcon.className = newTheme === 'light' ? 'fas fa-sun' : 'fas fa-moon';
+      }
+      
+      // Update display
+      updateThemeDisplay();
+      
+      console.log('Theme switched to:', newTheme);
+    }
+
+    // Load saved theme
+    (function() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      
+      window.addEventListener('DOMContentLoaded', () => {
+        const themeIcon = document.getElementById('themeIcon');
+        if (themeIcon) {
+          themeIcon.className = savedTheme === 'light' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+        updateThemeDisplay();
+      });
+    })();
+
+    function updateThemeDisplay() {
+      const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+      const display = document.getElementById('currentTheme');
+      if (display) {
+        display.textContent = theme.charAt(0).toUpperCase() + theme.slice(1) + ' Mode';
+        display.style.color = theme === 'light' ? '#6366f1' : '#818cf8';
+        display.style.fontWeight = '700';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,301 @@
+/* ========================================
+   MODERN PROFESSIONAL PANEL REDESIGN
+   Complete CSS for Redesigned Panels
+   ======================================== */
+
+/* FontAwesome Icon Adjustments */
+.modern-panel-icon i {
+  font-size: 24px;
+}
+
+.filter-icon i {
+  font-size: 16px;
+}
+
+.stat-icon i {
+  font-size: 18px;
+}
+
+/* Modern Selector Styles */
+.modern-selector {
+  width: 100%;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #f1f5f9;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s;
+  background-image: linear-gradient(45deg, transparent 50%, #8b5cf6 50%),
+                    linear-gradient(135deg, #8b5cf6 50%, transparent 50%);
+  background-position: calc(100% - 15px) calc(1em), calc(100% - 10px) calc(1em);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 30px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.modern-selector:hover {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.modern-selector:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
+
+.modern-selector option {
+  background: #0f172a;
+  color: #f1f5f9;
+  padding: 8px;
+  font-weight: 600;
+}
+
+.modern-selector optgroup {
+  background: rgba(30, 41, 59, 0.95);
+  color: #8b5cf6;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  padding: 6px;
+}
+
+/* Modern Legend Gradient */
+.modern-legend-gradient {
+  width: 100%;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, 
+    #ef4444 0%, #fc8d59 20%, #fee08b 40%, 
+    #66bd63 60%, #1a9850 80%, #3b0764 100%);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  margin-bottom: 10px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.modern-legend-gradient:hover {
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4), 0 0 0 1px rgba(139, 92, 246, 0.3) inset;
+  transform: translateY(-2px);
+}
+
+.modern-legend-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.legend-label-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.modern-scale-details {
+  margin-top: 12px;
+  padding: 10px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 8px;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.scale-detail-item {
+  margin-bottom: 10px;
+}
+
+.scale-detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.scale-detail-bar {
+  height: 6px;
+  border-radius: 3px;
+  margin-bottom: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.scale-detail-range {
+  font-size: 10px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 2px;
+}
+
+.scale-detail-label {
+  font-size: 9px;
+  font-weight: 500;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Modern Filter Grid */
+.modern-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.modern-filter-item {
+  position: relative;
+  cursor: pointer;
+  display: block;
+}
+
+.modern-filter-item input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.filter-item-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 2px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.modern-filter-item:hover .filter-item-content {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(139, 92, 246, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.modern-filter-item input:checked + .filter-item-content {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.filter-icon {
+  font-size: 16px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.filter-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #f1f5f9;
+  letter-spacing: 0.2px;
+}
+
+.highlighted-filter .filter-item-content {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1));
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.highlighted-filter:hover .filter-item-content {
+  border-color: rgba(139, 92, 246, 0.6);
+}
+
+/* Modern Statistics Grid */
+.modern-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.modern-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 10px;
+  transition: all 0.3s;
+  overflow: hidden;
+  position: relative;
+}
+
+.modern-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, #8b5cf6, #ec4899);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.modern-stat-card:hover {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(139, 92, 246, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.modern-stat-card:hover::before {
+  opacity: 1;
+}
+
+.stat-highlight {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.05));
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.stat-icon {
+  font-size: 24px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.stat-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-label-modern {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.stat-value-modern {
+  font-size: 15px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+}
+
+/* Collapsed State for Modern Panels */
+.modern-control-panel.collapsed .modern-panel-content {
+  display: none;
+}
+
+.modern-control-panel.collapsed .modern-collapse-btn svg {
+  transform: rotate(-90deg);
+}

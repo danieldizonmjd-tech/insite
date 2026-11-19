@@ -1,0 +1,9 @@
+{
+  "name": "@insite/core",
+  "version": "2.0.0",
+  "description": "InSite Urban Intelligence Platform - Core modules",
+  "type": "module",
+  "main": "index.js",
+  "author": "InSite",
+  "license": "MIT"
+}
